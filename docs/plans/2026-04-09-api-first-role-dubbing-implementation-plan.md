@@ -752,10 +752,17 @@ git add docs/plans/2026-04-09-api-first-role-dubbing-implementation-plan.md
 git commit -m "docs(plan): record verification completion checklist"
 ```
 
+**Verification record (2026-04-10):**
+
+- [x] `python -m pytest -q apps/backend/tests` -> `26 passed` (with non-blocking pytest cache permission warning)
+- [x] `python -m pytest -q tests/unit tests/integration` -> `3 passed` (with non-blocking pytest cache permission warning)
+- [x] `npm --prefix apps/web run lint` -> PASS (executed as `npm.cmd --prefix apps/web run lint` in PowerShell)
+- [x] `npm --prefix apps/web run test:e2e` -> PASS (executed as `npm.cmd --prefix apps/web run test:e2e` in PowerShell)
+- [x] `git status --short` reviewed before commit
+
 ## Handoff Notes
 
 - Start implementation in a dedicated worktree.
 - Keep all provider secrets in environment variables only.
 - Do not block fast deliverable on lipsync stage.
 - Ensure budget decision UI/API always exposes the two approved options and estimated extra cost.
-
