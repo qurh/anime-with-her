@@ -28,6 +28,13 @@ class JobStore:
         with self._lock:
             return self._jobs.get(job_id)
 
+    def update_state(self, job_id: str, state: JobState) -> None:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return
+            job.state = state
+
     def reset(self) -> None:
         with self._lock:
             self._jobs.clear()
@@ -53,7 +60,11 @@ def get_job(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    current_state = job.state
+    if job.state == JobState.CREATED:
+        job_store.update_state(job_id, JobState.RUNNING)
+
     return {
         "success": True,
-        "data": JobData(job_id=job.job_id, state=job.state, input_video=job.input_video),
+        "data": JobData(job_id=job.job_id, state=current_state, input_video=job.input_video),
     }
