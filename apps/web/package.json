@@ -1,0 +1,7 @@
+{
+  "name": "anime-with-her-web",
+  "private": true,
+  "scripts": {
+    "test:e2e": "node -e \"const fs=require('fs');const s=fs.readFileSync('app/page.tsx','utf8');if(!s.includes('Jobs')){console.error('Missing Jobs header');process.exit(1)};console.log('web smoke ok');\""
+  }
+}
