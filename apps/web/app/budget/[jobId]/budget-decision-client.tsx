@@ -30,7 +30,7 @@ function presentOptionDesc(option: string): string {
 
 function toFriendlyError(error: unknown): string {
   if (error instanceof Error && error.message.includes("Failed to fetch")) {
-    return "网络请求失败。请确认后端服务正在运行，并允许跨域。";
+    return "网络请求失败，请确认后端服务正在运行并允许跨域访问。";
   }
   if (error instanceof Error) {
     return error.message;
@@ -79,18 +79,15 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
 
   return (
     <main className="app-shell budget-shell">
-      <section className="glass-bar">
+      <section className="glass-bar compact">
         <div className="brand">
-          <div className="brand-badge">B</div>
+          <div className="brand-badge">策</div>
           <div>
-            <h1 className="brand-title">Budget Decision</h1>
-            <p className="brand-sub">预算决策与默认回退策略</p>
+            <h1 className="brand-title">预算决策</h1>
+            <p className="brand-sub">在预算阈值内选择下一步路径</p>
           </div>
         </div>
-        <div className="chip-group">
-          <span className="chip">Job: {jobId}</span>
-          <span className="chip">10 分钟超时窗口</span>
-        </div>
+        <p className="top-note">Job: {jobId}</p>
       </section>
 
       <section className="panel budget-header">
@@ -107,7 +104,7 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
 
         {data ? (
           <>
-            <div className="metrics">
+            <div className="metrics soft">
               <article className="metric-card">
                 <p className="metric-label">Job ID</p>
                 <p className="metric-value">{data.job_id}</p>

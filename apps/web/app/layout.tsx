@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "Anime With Her Console",
+  title: "一起看动漫",
   description: "Role-level dubbing operations console",
 };
 
