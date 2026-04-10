@@ -18,3 +18,12 @@ npm run dev:web
 npm run test:backend
 ```
 
+## Frontend Quick Start
+
+```powershell
+npm --prefix apps/web install
+npm run dev:web
+```
+
+Web console: `http://127.0.0.1:3000`
+

@@ -1,1 +1,1 @@
-npm --prefix apps/web run test:e2e
+npm --prefix apps/web run dev

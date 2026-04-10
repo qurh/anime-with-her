@@ -1,7 +1,21 @@
 {
   "name": "anime-with-her-web",
   "private": true,
+  "dependencies": {
+    "next": "^15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  },
   "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
     "lint": "node -e \"const fs=require('fs');const files=['app/page.tsx','app/budget/[jobId]/page.tsx','lib/api.ts'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing file:',f);process.exit(1)}};const api=fs.readFileSync('lib/api.ts','utf8');if(!api.includes('export const API_BASE_URL')){console.error('Missing API_BASE_URL export');process.exit(1)};console.log('web lint ok');\"",
     "test:e2e": "node -e \"const fs=require('fs');const s=fs.readFileSync('app/page.tsx','utf8');if(!s.includes('Jobs')){console.error('Missing Jobs header');process.exit(1)};console.log('web smoke ok');\""
   }

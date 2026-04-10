@@ -1,14 +1,12 @@
 type BudgetPageProps = {
-  params: {
+  params: Promise<{
     jobId: string;
-  };
+  }>;
 };
 
-export default function BudgetPage({ params }: BudgetPageProps) {
-  return (
-    <main>
-      <h1>Budget Decision</h1>
-      <p>Job: {params.jobId}</p>
-    </main>
-  );
+import BudgetDecisionClientPage from "./budget-decision-client";
+
+export default async function BudgetPage({ params }: BudgetPageProps) {
+  const resolvedParams = await params;
+  return <BudgetDecisionClientPage jobId={resolvedParams.jobId} />;
 }
