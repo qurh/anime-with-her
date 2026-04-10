@@ -1,0 +1,10 @@
+{
+  "name": "anime-with-her-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:backend": "uvicorn app.main:app --reload --app-dir apps/backend",
+    "dev:worker": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-worker.ps1",
+    "dev:web": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-web.ps1",
+    "test:backend": "python -m pytest -q apps/backend/tests"
+  }
+}
