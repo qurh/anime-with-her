@@ -222,6 +222,47 @@ a {
   line-height: 1.58;
 }
 
+.flow-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.flow-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid #d8cfb5;
+  background: #f8f4ea;
+  color: #5f6c6d;
+  font-size: 0.8rem;
+}
+
+.flow-step.done {
+  border-color: rgba(67, 140, 97, 0.45);
+  background: rgba(67, 140, 97, 0.12);
+  color: #2e6f48;
+}
+
+.flow-step.current {
+  border-color: rgba(15, 141, 146, 0.45);
+  background: rgba(15, 141, 146, 0.12);
+  color: var(--brand-strong);
+}
+
+.flow-index {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  background: rgba(94, 106, 108, 0.16);
+}
+
 .field {
   margin-top: 14px;
 }
@@ -245,6 +286,32 @@ a {
 .text-input:focus {
   outline: 2px solid rgba(15, 141, 146, 0.32);
   border-color: var(--brand);
+}
+
+.upload-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #cabf9f;
+  border-radius: 12px;
+  background: #fffefb;
+}
+
+.sr-only-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-compact .notice {
+  margin: 0;
 }
 
 .row {
@@ -407,6 +474,38 @@ a {
   max-width: 960px;
 }
 
+.next-card {
+  margin-top: 12px;
+  border: 1px solid #d9ceb4;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fffdf7;
+}
+
+.ux-details {
+  margin-top: 14px;
+  border-top: 1px dashed #d6ccb3;
+  padding-top: 10px;
+}
+
+.ux-details summary {
+  cursor: pointer;
+  color: var(--brand-strong);
+  font-size: 0.84rem;
+}
+
+.muted-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.muted-list li + li {
+  margin-top: 4px;
+}
+
 .budget-header {
   margin-bottom: 14px;
 }
@@ -447,6 +546,11 @@ a {
   }
 
   .glass-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .upload-compact {
     flex-direction: column;
     align-items: flex-start;
   }

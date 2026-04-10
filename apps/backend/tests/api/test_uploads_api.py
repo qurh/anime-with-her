@@ -39,3 +39,17 @@ def test_upload_video_rejects_non_video_content_type(client):
     )
 
     assert resp.status_code == 415
+
+
+def test_upload_video_allows_cors_preflight(client):
+    resp = client.options(
+        "/api/v1/uploads/video",
+        headers={
+            "origin": "http://127.0.0.1:3000",
+            "access-control-request-method": "POST",
+            "access-control-request-headers": "content-type,x-filename",
+        },
+    )
+
+    assert resp.status_code == 200
+    assert resp.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"

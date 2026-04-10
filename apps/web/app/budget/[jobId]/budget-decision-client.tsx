@@ -20,12 +20,22 @@ function presentOptionLabel(option: string): string {
 
 function presentOptionDesc(option: string): string {
   if (option === "skip_lipsync_continue_dubbing") {
-    return "最快拿到可交付版本，成本可控，适合预算敏感场景。";
+    return "交付更快、成本更稳，适合预算敏感阶段。";
   }
   if (option === "continue_full_pipeline") {
-    return "获得更高一致性的完整成片，但会继续消耗额外预算。";
+    return "成片一致性更高，但会继续增加预算消耗。";
   }
   return "按当前策略执行。";
+}
+
+function toFriendlyError(error: unknown): string {
+  if (error instanceof Error && error.message.includes("Failed to fetch")) {
+    return "网络请求失败。请确认后端服务正在运行，并允许跨域。";
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "获取预算决策失败";
 }
 
 export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClientPageProps) {
@@ -36,6 +46,7 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
 
   useEffect(() => {
     let active = true;
+
     async function load() {
       setLoading(true);
       setError(null);
@@ -50,13 +61,14 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
         if (!active) {
           return;
         }
-        setError(fetchError instanceof Error ? fetchError.message : "获取预算决策失败");
+        setError(toFriendlyError(fetchError));
       } finally {
         if (active) {
           setLoading(false);
         }
       }
     }
+
     void load();
     return () => {
       active = false;
@@ -85,7 +97,7 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
         <h2>预算决策面板</h2>
         <p>当口型同步成本超预算时，请在窗口期内选择策略。未选择时将执行默认动作。</p>
         <Link href="/" className="small-link">
-          返回 Jobs 控制台
+          返回创建任务页
         </Link>
       </section>
 
@@ -122,7 +134,7 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
                     role="button"
                     tabIndex={0}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
+                      if (event.key === "Enter" || event.key === " ") {
                         setSelected(option);
                       }
                     }}
@@ -138,7 +150,7 @@ export default function BudgetDecisionClientPage({ jobId }: BudgetDecisionClient
             </div>
 
             <div className="status-box">
-              <span className="status-pill status-awaiting_budget_decision">建议确认策略后再执行</span>
+              <span className="status-pill status-awaiting_budget_decision">建议确认策略后继续</span>
               <p>当前选择：{selected ? presentOptionLabel(selected) : "未选择"}</p>
               <p>默认动作：{presentOptionLabel(data.default_action)}</p>
             </div>

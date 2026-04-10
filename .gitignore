@@ -45,3 +45,7 @@ __pycache__/
 .mypy_cache/
 .venv/
 venv/
+
+# Local runtime data
+data/input/*
+!data/input/.gitkeep
