@@ -5,6 +5,7 @@ from worker.adapters.asr_align import run_asr_align
 from worker.adapters.audio_separation import run_audio_separation
 from worker.adapters.media_ingest import run_media_ingest
 from worker.adapters.mix_master import run_mix_master
+from worker.adapters.qa_review import run_qa_review
 from worker.adapters.speaker_role import run_speaker_role
 from worker.adapters.tts_synthesis import run_tts_synthesis
 from worker.pipelines.dub_script import rewrite_for_dubbing
@@ -209,11 +210,19 @@ def run_episode_pipeline(
         )
         stage_results[current_stage] = mix_master
 
+        qa_review = run_qa_review(
+            episode_id=episode_id,
+            final_audio_path=str(mix_master["artifacts"]["final_audio_path"]),
+            final_video_path=str(mix_master["artifacts"]["final_video_path"]),
+        )
+        stage_results["qa_review"] = qa_review
+
         return {
             "episode_id": episode_id,
             "state": "success",
             "stages": STAGES,
             "stage_results": stage_results,
+            "qa_summary": qa_review["artifacts"]["qa_summary"],
             "outputs": {
                 "final_audio_path": mix_master["artifacts"]["final_audio_path"],
                 "final_video_path": mix_master["artifacts"]["final_video_path"],
@@ -233,6 +242,7 @@ def run_episode_pipeline(
             "error": str(error),
             "stages": STAGES,
             "stage_results": stage_results,
+            "qa_summary": {},
             "outputs": {
                 "final_audio_path": "",
                 "final_video_path": "",

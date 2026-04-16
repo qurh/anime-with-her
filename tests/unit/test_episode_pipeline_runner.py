@@ -26,6 +26,9 @@ def test_episode_pipeline_runner_executes_all_core_stages(tmp_path: Path):
     assert stage_results["dub_script"]["segments"][0]["provider"] in {"qwen", "doubao"}
     assert stage_results["tts_synthesis"]["artifacts"]["segments"][0]["provider"] in {"aliyun_tts", "doubao_tts"}
     assert stage_results["mix_master"]["state"] == "success"
+    assert 0.0 <= result["qa_summary"]["timing_fit_score"] <= 1.0
+    assert 0.0 <= result["qa_summary"]["voice_stability_score"] <= 1.0
+    assert 0.0 <= result["qa_summary"]["mix_balance_score"] <= 1.0
 
     assert Path(result["outputs"]["final_audio_path"]).exists()
     assert Path(result["outputs"]["final_video_path"]).exists()
