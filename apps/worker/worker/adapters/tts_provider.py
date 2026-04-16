@@ -1,3 +1,4 @@
+import os
 from typing import Protocol
 
 from worker.config import load_worker_config
@@ -21,6 +22,36 @@ class _TemplateTtsClient:
     def synthesize(self, text: str, duration_ms: int, style_hint: str) -> str:
         _ = duration_ms
         return f"{self.provider_name}:{style_hint}:{text}"
+
+
+def _invoke_live_tts(
+    provider_name: str,
+    api_key: str,
+    text: str,
+    duration_ms: int,
+    style_hint: str,
+) -> str:
+    _ = (provider_name, api_key, duration_ms, style_hint)
+    # real provider call should be implemented in next iteration.
+    return f"live:{text}"
+
+
+class _LiveTtsClient:
+    def __init__(self, provider_name: str, api_key_env: str):
+        self.provider_name = provider_name
+        self.api_key_env = api_key_env
+
+    def synthesize(self, text: str, duration_ms: int, style_hint: str) -> str:
+        api_key = os.getenv(self.api_key_env, "").strip()
+        if not api_key:
+            raise ProviderError(f"missing credential: {self.api_key_env}")
+        return _invoke_live_tts(
+            provider_name=self.provider_name,
+            api_key=api_key,
+            text=text,
+            duration_ms=duration_ms,
+            style_hint=style_hint,
+        )
 
 
 class TtsProviderRouter:
@@ -50,10 +81,16 @@ class TtsProviderRouter:
                 ) from fallback_error
 
 
+def _build_default_client(provider_name: str, api_key_env: str, wants_real: bool) -> TtsClient:
+    if wants_real and os.getenv(api_key_env, "").strip():
+        return _LiveTtsClient(provider_name=provider_name, api_key_env=api_key_env)
+    return _TemplateTtsClient(provider_name=provider_name)
+
+
 def build_default_tts_router() -> TtsProviderRouter:
     config = load_worker_config()
-    _ = config.should_use_real("tts_synthesis")
+    wants_real = config.should_use_real("tts_synthesis")
     return TtsProviderRouter(
-        primary_client=_TemplateTtsClient(provider_name="aliyun_tts"),
-        fallback_client=_TemplateTtsClient(provider_name="doubao_tts"),
+        primary_client=_build_default_client("aliyun_tts", "ALIYUN_TTS_API_KEY", wants_real),
+        fallback_client=_build_default_client("doubao_tts", "DOUBAO_TTS_API_KEY", wants_real),
     )
