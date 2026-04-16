@@ -5,8 +5,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "node -e \"const fs=require('fs');const files=['app/page.tsx','app/episodes/[episodeId]/character-review/page.tsx','app/episodes/[episodeId]/segments/page.tsx'];for(const f of files){if(!fs.existsSync(f)){console.error('Missing file:',f);process.exit(1)}};console.log('web lint ok');\"",
-    "test:e2e": "node -e \"const fs=require('fs');const checks=[['app/page.tsx','AI 配音导演台'],['app/episodes/[episodeId]/character-review/page.tsx','角色分析确认'],['app/episodes/[episodeId]/segments/page.tsx','关键片段精修']];for(const [f,t] of checks){if(!fs.existsSync(f)){console.error('Missing file:',f);process.exit(1)};if(!fs.readFileSync(f,'utf8').includes(t)){console.error('Missing text:',t);process.exit(1)}};console.log('web smoke ok')\""
+    "lint": "node tests/smoke/test_existing_pages_contract.js",
+    "test:e2e": "node tests/smoke/test_existing_pages_contract.js && node tests/smoke/test_runs_pages_contract.js && node tests/smoke/test_run_retry_contract.js"
   },
   "dependencies": {
     "next": "15.3.3",

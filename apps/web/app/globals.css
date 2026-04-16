@@ -69,6 +69,14 @@ body {
   font-size: 16px;
   background: #fefdf7;
 }
+.field select {
+  width: 100%;
+  border: 1px solid #c9bf9f;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+  background: #fefdf7;
+}
 
 .run-button {
   border: 0;
@@ -109,4 +117,23 @@ body {
   border-radius: 10px;
   padding: 8px 10px;
   background: #faf7ee;
+}
+
+.runs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.run-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #ddd4b6;
+  border-radius: 10px;
+  background: #faf7ee;
+  padding: 12px;
+}
+
+.run-card p {
+  margin: 4px 0 0;
 }

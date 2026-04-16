@@ -19,6 +19,7 @@ pipeline_run_store = PipelineRunStore()
 class RunEpisodePipelineRequest(BaseModel):
     source_video: str
     root: str = "data/episodes"
+    start_stage: str | None = None
 
 
 def _load_episode_runner():
@@ -31,7 +32,13 @@ def _load_episode_runner():
     return getattr(module, "run_episode_pipeline")
 
 
-def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str):
+def _execute_pipeline(
+    run_id: str,
+    episode_id: str,
+    source_video: str,
+    root: str,
+    start_stage: str | None = None,
+):
     run = pipeline_run_store.get_run(run_id)
     if run is None:
         return
@@ -47,6 +54,7 @@ def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str
             episode_id=episode_id,
             source_video=source_video,
             root=root,
+            start_stage=start_stage,
         )
 
         for stage_name in result.get("stages", []):
@@ -145,6 +153,7 @@ def run_episode_pipeline_endpoint(
         episode_id,
         payload.source_video,
         payload.root,
+        payload.start_stage,
     )
     return {
         "success": True,

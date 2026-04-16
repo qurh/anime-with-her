@@ -1,45 +1,34 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
-type PipelineRunData = {
-  episode_id: string;
-  state: string;
-  stages: string[];
-  stage_states: Record<string, string>;
-  final_audio_path: string;
-  final_video_path: string;
-};
-
-type PipelineRunResponse = {
+type TriggerResponse = {
   success: boolean;
-  data?: PipelineRunData;
+  data?: {
+    run_id: string;
+    episode_id: string;
+    state: string;
+    estimated_cost_cny: number;
+    estimated_duration_seconds: number;
+  };
   error?: string;
 };
 
 export default function HomePage() {
+  const router = useRouter();
+
   const [episodeId, setEpisodeId] = useState("episode_1");
   const [sourceVideo, setSourceVideo] = useState("data/input/demo.mkv");
-  const [root, setRoot] = useState("");
+  const [root, setRoot] = useState("data/episodes");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<PipelineRunData | null>(null);
-
-  const orderedStageStates = useMemo(() => {
-    if (!result) {
-      return [];
-    }
-    return result.stages.map((stageName) => ({
-      stageName,
-      state: result.stage_states[stageName] || "unknown",
-    }));
-  }, [result]);
 
   async function handleRun(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
-    setResult(null);
     try {
       const response = await fetch("/api/pipeline/run", {
         method: "POST",
@@ -50,12 +39,12 @@ export default function HomePage() {
           root: root.trim() || undefined,
         }),
       });
-      const payload = (await response.json()) as PipelineRunResponse;
+      const payload = (await response.json()) as TriggerResponse;
       if (!response.ok || !payload.success || !payload.data) {
-        setError(payload.error || "触发失败，请稍后重试。");
+        setError(payload.error || "创建任务失败，请稍后重试。");
         return;
       }
-      setResult(payload.data);
+      router.push(`/runs/${payload.data.run_id}?episode_id=${encodeURIComponent(payload.data.episode_id)}`);
     } catch {
       setError("网络异常，无法连接到本地服务。");
     } finally {
@@ -67,11 +56,11 @@ export default function HomePage() {
     <main className="container">
       <header className="hero">
         <h1>AI 配音导演台</h1>
-        <p>从上传素材到中配成片，一键触发整集串跑并实时查看阶段状态。</p>
+        <p>三步完成入口：创建任务、查看任务详情、按需重跑失败阶段。</p>
       </header>
 
       <section className="panel">
-        <h2>整集串跑</h2>
+        <h2>创建任务</h2>
         <form className="form-grid" onSubmit={handleRun}>
           <label className="field">
             <span>Episode ID</span>
@@ -85,33 +74,26 @@ export default function HomePage() {
 
           <label className="field">
             <span>工作目录（可选）</span>
-            <input value={root} onChange={(event) => setRoot(event.target.value)} placeholder="data/episodes" />
+            <input value={root} onChange={(event) => setRoot(event.target.value)} />
           </label>
 
-          <button className="run-button" type="submit" disabled={loading}>
-            {loading ? "串跑中..." : "开始整集串跑"}
+          <button className="run-button" type="submit" disabled={loading || !episodeId || !sourceVideo}>
+            {loading ? "创建中..." : "创建任务"}
           </button>
         </form>
       </section>
 
-      {error ? <p className="error">{error}</p> : null}
+      <section className="panel">
+        <h2>快速入口</h2>
+        <p>
+          <Link href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}>查看该 Episode 的任务历史</Link>
+        </p>
+        <p>
+          任务创建成功后会自动跳转到 <code>/runs/&lt;run_id&gt;</code> 详情页。
+        </p>
+      </section>
 
-      {result ? (
-        <section className="panel">
-          <h2>运行结果</h2>
-          <p>状态：{result.state}</p>
-          <p>最终音频：{result.final_audio_path}</p>
-          <p>最终视频：{result.final_video_path}</p>
-          <div className="stage-list">
-            {orderedStageStates.map((item) => (
-              <div className="stage-item" key={item.stageName}>
-                <strong>{item.stageName}</strong>
-                <span>{item.state}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {error ? <p className="error">{error}</p> : null}
     </main>
   );
 }
