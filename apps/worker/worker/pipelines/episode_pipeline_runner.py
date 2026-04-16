@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from worker.adapters.asr_align import run_asr_align
 from worker.adapters.audio_separation import run_audio_separation
 from worker.adapters.media_ingest import run_media_ingest
@@ -45,36 +48,137 @@ def _build_dub_segments(asr_segments: list[dict[str, object]]) -> list[dict[str,
     return dub_segments
 
 
-def run_episode_pipeline(episode_id: str, source_video: str, root: str = "data/episodes") -> dict[str, object]:
+def _is_skipped(stage_name: str, start_stage: str | None) -> bool:
+    if start_stage is None:
+        return False
+    return STAGES.index(stage_name) < STAGES.index(start_stage)
+
+
+def _require_file(path: Path, stage_name: str):
+    if not path.exists():
+        raise RuntimeError(f"missing artifact for resume at {stage_name}: {path.as_posix()}")
+
+
+def _load_skipped_media_ingest(episode_id: str, source_video: str, root: str) -> dict[str, object]:
+    suffix = Path(source_video).suffix or ".mp4"
+    input_dir = Path(root) / episode_id / "input"
+    source_video_path = input_dir / f"source{suffix}"
+    normalized_vocals_path = input_dir / "vocals_norm.wav"
+    _require_file(source_video_path, "media_ingest")
+    _require_file(normalized_vocals_path, "media_ingest")
+    return {
+        "stage_name": "media_ingest",
+        "state": "skipped",
+        "artifacts": {
+            "source_video_path": source_video_path.as_posix(),
+            "normalized_vocals_path": normalized_vocals_path.as_posix(),
+        },
+    }
+
+
+def _load_skipped_audio_separation(episode_id: str, root: str) -> dict[str, object]:
+    base = Path(root) / episode_id / "analysis" / "separation"
+    vocals_path = base / "vocals.wav"
+    background_path = base / "background.wav"
+    effects_path = base / "effects.wav"
+    _require_file(vocals_path, "audio_separation")
+    _require_file(background_path, "audio_separation")
+    _require_file(effects_path, "audio_separation")
+    return {
+        "stage_name": "audio_separation",
+        "state": "skipped",
+        "artifacts": {
+            "vocals_path": vocals_path.as_posix(),
+            "background_path": background_path.as_posix(),
+            "effects_path": effects_path.as_posix(),
+        },
+    }
+
+
+def _load_skipped_asr_align(episode_id: str, root: str) -> dict[str, object]:
+    segments_path = Path(root) / episode_id / "analysis" / "asr_align" / "segments.json"
+    _require_file(segments_path, "asr_align")
+    segments = json.loads(segments_path.read_text(encoding="utf-8"))
+    return {
+        "stage_name": "asr_align",
+        "state": "skipped",
+        "artifacts": {
+            "segments_path": segments_path.as_posix(),
+            "segments": segments,
+        },
+    }
+
+
+def _load_skipped_speaker_role(episode_id: str, root: str) -> dict[str, object]:
+    base = Path(root) / episode_id / "analysis" / "speaker_role"
+    speaker_segments_path = base / "speaker_segments.json"
+    speakers_path = base / "speakers.json"
+    _require_file(speaker_segments_path, "speaker_role")
+    _require_file(speakers_path, "speaker_role")
+    speaker_segments = json.loads(speaker_segments_path.read_text(encoding="utf-8"))
+    speakers = json.loads(speakers_path.read_text(encoding="utf-8"))
+    return {
+        "stage_name": "speaker_role",
+        "state": "skipped",
+        "artifacts": {
+            "speaker_segments_path": speaker_segments_path.as_posix(),
+            "speakers_path": speakers_path.as_posix(),
+            "speaker_segments": speaker_segments,
+            "speakers": speakers,
+        },
+    }
+
+
+def run_episode_pipeline(
+    episode_id: str,
+    source_video: str,
+    root: str = "data/episodes",
+    start_stage: str | None = None,
+) -> dict[str, object]:
+    if start_stage is not None and start_stage not in STAGES:
+        raise ValueError(f"unknown start_stage: {start_stage}")
+
     stage_results: dict[str, dict[str, object]] = {}
     current_stage: str | None = None
     try:
         current_stage = "media_ingest"
-        media_ingest = run_media_ingest(episode_id=episode_id, source_video=source_video, root=root)
+        if _is_skipped(current_stage, start_stage):
+            media_ingest = _load_skipped_media_ingest(episode_id=episode_id, source_video=source_video, root=root)
+        else:
+            media_ingest = run_media_ingest(episode_id=episode_id, source_video=source_video, root=root)
         stage_results[current_stage] = media_ingest
 
         current_stage = "audio_separation"
-        audio_separation = run_audio_separation(
-            episode_id=episode_id,
-            normalized_vocals_path=str(media_ingest["artifacts"]["normalized_vocals_path"]),
-            root=root,
-        )
+        if _is_skipped(current_stage, start_stage):
+            audio_separation = _load_skipped_audio_separation(episode_id=episode_id, root=root)
+        else:
+            audio_separation = run_audio_separation(
+                episode_id=episode_id,
+                normalized_vocals_path=str(media_ingest["artifacts"]["normalized_vocals_path"]),
+                root=root,
+            )
         stage_results[current_stage] = audio_separation
 
         current_stage = "asr_align"
-        asr_align = run_asr_align(
-            episode_id=episode_id,
-            vocals_path=str(audio_separation["artifacts"]["vocals_path"]),
-            root=root,
-        )
+        if _is_skipped(current_stage, start_stage):
+            asr_align = _load_skipped_asr_align(episode_id=episode_id, root=root)
+        else:
+            asr_align = run_asr_align(
+                episode_id=episode_id,
+                vocals_path=str(audio_separation["artifacts"]["vocals_path"]),
+                root=root,
+            )
         stage_results[current_stage] = asr_align
 
         current_stage = "speaker_role"
-        speaker_role = run_speaker_role(
-            episode_id=episode_id,
-            segments_path=str(asr_align["artifacts"]["segments_path"]),
-            root=root,
-        )
+        if _is_skipped(current_stage, start_stage):
+            speaker_role = _load_skipped_speaker_role(episode_id=episode_id, root=root)
+        else:
+            speaker_role = run_speaker_role(
+                episode_id=episode_id,
+                segments_path=str(asr_align["artifacts"]["segments_path"]),
+                root=root,
+            )
         stage_results[current_stage] = speaker_role
 
         current_stage = "dub_script"
