@@ -1,4 +1,4 @@
-﻿# anime-with-her
+# anime-with-her
 
 面向外语动漫中配化的 AI 配音导演控制台。
 
@@ -13,3 +13,14 @@
 - 表演与情绪复刻优先，音色相似为辅
 - 先角色分析确认，再生成整集
 - 支持关键片段精修与重生成
+
+## 开发命令
+
+```powershell
+npm run dev:backend
+npm run dev:worker
+npm run dev:web
+python -m pytest -q apps/backend/tests
+$env:PYTHONPATH="apps/worker"; python -m pytest -q tests/unit
+npm.cmd --prefix apps/web run test:e2e
+```
