@@ -44,6 +44,16 @@ def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str
             stage_state = str(stage_result.get("state", "unknown"))
             pipeline_run_store.set_stage_state(run_id, stage_name, stage_state)
 
+        result_state = str(result.get("state", "failed"))
+        if result_state == "failed":
+            pipeline_run_store.update_run_state(
+                run_id,
+                PipelineRunState.FAILED,
+                failed_stage=str(result.get("failed_stage") or ""),
+                error_message=str(result.get("error") or "pipeline failed"),
+            )
+            return
+
         pipeline_run_store.update_run_state(
             run_id,
             PipelineRunState.SUCCESS,
