@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "anime-with-her-worker"
 version = "0.1.0"
 description = "Worker for AI dubbing director console"
