@@ -8,12 +8,23 @@ class PipelineRunStore:
         self._next_run = 1
         self.runs: dict[str, PipelineRun] = {}
 
-    def create_run(self, episode_id: str, source_video: str, root: str) -> PipelineRun:
+    def create_run(
+        self,
+        episode_id: str,
+        source_video: str,
+        root: str,
+        estimated_cost_cny: float = 0.0,
+        estimated_duration_seconds: int = 0,
+        cost_summary: dict[str, float | int] | None = None,
+    ) -> PipelineRun:
         run = PipelineRun(
             run_id=f"run_{self._next_run}",
             episode_id=episode_id,
             source_video=source_video,
             root=root,
+            estimated_cost_cny=estimated_cost_cny,
+            estimated_duration_seconds=estimated_duration_seconds,
+            cost_summary=cost_summary or {},
         )
         self._next_run += 1
         self.runs[run.run_id] = run
@@ -29,6 +40,7 @@ class PipelineRunStore:
         failed_stage: str | None = None,
         error_message: str | None = None,
         outputs: dict[str, str] | None = None,
+        cost_summary: dict[str, float | int] | None = None,
     ) -> PipelineRun:
         run = self.runs[run_id]
         run.state = state
@@ -39,6 +51,8 @@ class PipelineRunStore:
             run.error_message = error_message
         if outputs is not None:
             run.outputs = outputs
+        if cost_summary is not None:
+            run.cost_summary = cost_summary
         return run
 
     def set_stage_state(self, run_id: str, stage_name: str, stage_state: str) -> PipelineRun:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 
 from app.domain.pipeline_run import PipelineRun, PipelineRunState
 from app.repositories.pipeline_run_store import PipelineRunStore
+from app.services.cost_estimator import estimate_pipeline_cost
 
 router = APIRouter()
 pipeline_run_store = PipelineRunStore()
@@ -30,7 +32,15 @@ def _load_episode_runner():
 
 
 def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str):
+    run = pipeline_run_store.get_run(run_id)
+    if run is None:
+        return
+
+    estimated_cost_cny = run.estimated_cost_cny
+    estimated_duration_seconds = run.estimated_duration_seconds
+
     pipeline_run_store.update_run_state(run_id, PipelineRunState.RUNNING)
+    started_at = time.monotonic()
     try:
         run_episode_pipeline = _load_episode_runner()
         result = run_episode_pipeline(
@@ -44,13 +54,19 @@ def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str
             stage_state = str(stage_result.get("state", "unknown"))
             pipeline_run_store.set_stage_state(run_id, stage_name, stage_state)
 
-        result_state = str(result.get("state", "failed"))
-        if result_state == "failed":
+        actual_duration_seconds = max(0, int(round(time.monotonic() - started_at)))
+        if str(result.get("state", "failed")) == "failed":
             pipeline_run_store.update_run_state(
                 run_id,
                 PipelineRunState.FAILED,
                 failed_stage=str(result.get("failed_stage") or ""),
                 error_message=str(result.get("error") or "pipeline failed"),
+                cost_summary={
+                    "estimated_cost_cny": estimated_cost_cny,
+                    "estimated_duration_seconds": estimated_duration_seconds,
+                    "actual_cost_cny": 0.0,
+                    "actual_duration_seconds": actual_duration_seconds,
+                },
             )
             return
 
@@ -61,12 +77,25 @@ def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str
                 "final_audio_path": str(result["outputs"]["final_audio_path"]),
                 "final_video_path": str(result["outputs"]["final_video_path"]),
             },
+            cost_summary={
+                "estimated_cost_cny": estimated_cost_cny,
+                "estimated_duration_seconds": estimated_duration_seconds,
+                "actual_cost_cny": estimated_cost_cny,
+                "actual_duration_seconds": actual_duration_seconds,
+            },
         )
     except Exception as error:
+        actual_duration_seconds = max(0, int(round(time.monotonic() - started_at)))
         pipeline_run_store.update_run_state(
             run_id,
             PipelineRunState.FAILED,
             error_message=str(error),
+            cost_summary={
+                "estimated_cost_cny": estimated_cost_cny,
+                "estimated_duration_seconds": estimated_duration_seconds,
+                "actual_cost_cny": 0.0,
+                "actual_duration_seconds": actual_duration_seconds,
+            },
         )
 
 
@@ -80,6 +109,9 @@ def _serialize_run(run: PipelineRun) -> dict[str, object]:
         "stage_states": run.stage_states,
         "failed_stage": run.failed_stage,
         "error_message": run.error_message,
+        "estimated_cost_cny": run.estimated_cost_cny,
+        "estimated_duration_seconds": run.estimated_duration_seconds,
+        "cost_summary": run.cost_summary,
         "final_audio_path": run.outputs.get("final_audio_path", ""),
         "final_video_path": run.outputs.get("final_video_path", ""),
         "created_at": run.created_at.isoformat(),
@@ -93,10 +125,19 @@ def run_episode_pipeline_endpoint(
     payload: RunEpisodePipelineRequest,
     background_tasks: BackgroundTasks,
 ):
+    estimation = estimate_pipeline_cost(payload.source_video)
     run = pipeline_run_store.create_run(
         episode_id=episode_id,
         source_video=payload.source_video,
         root=payload.root,
+        estimated_cost_cny=float(estimation["estimated_cost_cny"]),
+        estimated_duration_seconds=int(estimation["estimated_duration_seconds"]),
+        cost_summary={
+            "estimated_cost_cny": float(estimation["estimated_cost_cny"]),
+            "estimated_duration_seconds": int(estimation["estimated_duration_seconds"]),
+            "actual_cost_cny": 0.0,
+            "actual_duration_seconds": 0,
+        },
     )
     background_tasks.add_task(
         _execute_pipeline,
@@ -111,6 +152,8 @@ def run_episode_pipeline_endpoint(
             "run_id": run.run_id,
             "episode_id": run.episode_id,
             "state": run.state.value,
+            "estimated_cost_cny": run.estimated_cost_cny,
+            "estimated_duration_seconds": run.estimated_duration_seconds,
         },
     }
 
