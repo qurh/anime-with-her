@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from worker.config import load_worker_config
+
 
 class ProviderError(RuntimeError):
     """Raised when TTS provider invocation fails."""
@@ -49,6 +51,8 @@ class TtsProviderRouter:
 
 
 def build_default_tts_router() -> TtsProviderRouter:
+    config = load_worker_config()
+    _ = config.should_use_real("tts_synthesis")
     return TtsProviderRouter(
         primary_client=_TemplateTtsClient(provider_name="aliyun_tts"),
         fallback_client=_TemplateTtsClient(provider_name="doubao_tts"),
