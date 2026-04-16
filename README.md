@@ -1,15 +1,15 @@
 # anime-with-her
 
-AI dubbing director console for turning foreign-language anime into Chinese dubbed episodes.
+面向外语动漫中配化的 AI 配音导演台。
 
-The project has been reset to a clean design baseline. New implementation work should start from:
+项目已重置为干净的设计基线。后续所有实施计划和代码开发，都应从以下文档开始：
 
 - `docs/design/2026-04-16-ai-dubbing-director-console-integrated-design-v2-1.md`
 
-The new product direction is:
+当前产品方向：
 
-- produce one episode at a time
-- accumulate character assets at the season level
-- prioritize performance and emotion recreation over exact voice cloning
-- confirm characters before generating the full episode
-- refine key segments instead of manually reviewing every line
+- 按单集生产
+- 按整季沉淀角色资产
+- 表演与情绪复刻优先，音色相似为辅
+- 角色分析确认后，再生成整集
+- 重点精修关键片段，而不是逐句全量人工审修
