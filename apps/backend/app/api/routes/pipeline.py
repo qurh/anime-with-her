@@ -4,10 +4,14 @@ import importlib
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
+from app.domain.pipeline_run import PipelineRun, PipelineRunState
+from app.repositories.pipeline_run_store import PipelineRunStore
+
 router = APIRouter()
+pipeline_run_store = PipelineRunStore()
 
 
 class RunEpisodePipelineRequest(BaseModel):
@@ -25,26 +29,91 @@ def _load_episode_runner():
     return getattr(module, "run_episode_pipeline")
 
 
+def _execute_pipeline(run_id: str, episode_id: str, source_video: str, root: str):
+    pipeline_run_store.update_run_state(run_id, PipelineRunState.RUNNING)
+    try:
+        run_episode_pipeline = _load_episode_runner()
+        result = run_episode_pipeline(
+            episode_id=episode_id,
+            source_video=source_video,
+            root=root,
+        )
+
+        for stage_name in result.get("stages", []):
+            stage_result = result.get("stage_results", {}).get(stage_name, {})
+            stage_state = str(stage_result.get("state", "unknown"))
+            pipeline_run_store.set_stage_state(run_id, stage_name, stage_state)
+
+        pipeline_run_store.update_run_state(
+            run_id,
+            PipelineRunState.SUCCESS,
+            outputs={
+                "final_audio_path": str(result["outputs"]["final_audio_path"]),
+                "final_video_path": str(result["outputs"]["final_video_path"]),
+            },
+        )
+    except Exception as error:
+        pipeline_run_store.update_run_state(
+            run_id,
+            PipelineRunState.FAILED,
+            error_message=str(error),
+        )
+
+
+def _serialize_run(run: PipelineRun) -> dict[str, object]:
+    return {
+        "run_id": run.run_id,
+        "episode_id": run.episode_id,
+        "source_video": run.source_video,
+        "root": run.root,
+        "state": run.state.value,
+        "stage_states": run.stage_states,
+        "failed_stage": run.failed_stage,
+        "error_message": run.error_message,
+        "final_audio_path": run.outputs.get("final_audio_path", ""),
+        "final_video_path": run.outputs.get("final_video_path", ""),
+        "created_at": run.created_at.isoformat(),
+        "updated_at": run.updated_at.isoformat(),
+    }
+
+
 @router.post("/episodes/{episode_id}/pipeline/run", status_code=202)
-def run_episode_pipeline_endpoint(episode_id: str, payload: RunEpisodePipelineRequest):
-    run_episode_pipeline = _load_episode_runner()
-    result = run_episode_pipeline(
+def run_episode_pipeline_endpoint(
+    episode_id: str,
+    payload: RunEpisodePipelineRequest,
+    background_tasks: BackgroundTasks,
+):
+    run = pipeline_run_store.create_run(
         episode_id=episode_id,
         source_video=payload.source_video,
         root=payload.root,
     )
-    stage_states = {
-        stage_name: str(stage_result.get("state", "unknown"))
-        for stage_name, stage_result in result["stage_results"].items()
-    }
+    background_tasks.add_task(
+        _execute_pipeline,
+        run.run_id,
+        episode_id,
+        payload.source_video,
+        payload.root,
+    )
     return {
         "success": True,
         "data": {
-            "episode_id": result["episode_id"],
-            "state": result["state"],
-            "stages": result["stages"],
-            "stage_states": stage_states,
-            "final_audio_path": result["outputs"]["final_audio_path"],
-            "final_video_path": result["outputs"]["final_video_path"],
+            "run_id": run.run_id,
+            "episode_id": run.episode_id,
+            "state": run.state.value,
         },
     }
+
+
+@router.get("/pipeline-runs/{run_id}")
+def get_pipeline_run(run_id: str):
+    run = pipeline_run_store.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="pipeline run not found")
+    return {"success": True, "data": _serialize_run(run)}
+
+
+@router.get("/episodes/{episode_id}/pipeline-runs")
+def list_episode_pipeline_runs(episode_id: str, limit: int = 20):
+    runs = pipeline_run_store.list_runs_by_episode(episode_id, limit=limit)
+    return {"success": True, "data": [_serialize_run(item) for item in runs]}
