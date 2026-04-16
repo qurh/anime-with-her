@@ -1,9 +1,0 @@
-﻿[project]
-name = "anime-with-her-worker"
-version = "0.1.0"
-description = "Worker service for anime-with-her"
-requires-python = ">=3.11"
-dependencies = []
-
-[project.scripts]
-worker = "worker.main:main"

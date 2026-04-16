@@ -1,29 +1,15 @@
 # anime-with-her
 
-API-first anime dubbing monorepo with role-based speaker pipeline.
+AI dubbing director console for turning foreign-language anime into Chinese dubbed episodes.
 
-## Structure
+The project has been reset to a clean design baseline. New implementation work should start from:
 
-- `apps/backend`: FastAPI orchestration API
-- `apps/worker`: worker skeleton and pipeline utilities
-- `apps/web`: minimal console skeleton
-- `docs`: architecture and implementation plans
+- `docs/design/2026-04-16-ai-dubbing-director-console-integrated-design-v2-1.md`
 
-## Common Commands
+The new product direction is:
 
-```powershell
-npm run dev:backend
-npm run dev:worker
-npm run dev:web
-npm run test:backend
-```
-
-## Frontend Quick Start
-
-```powershell
-npm --prefix apps/web install
-npm run dev:web
-```
-
-Web console: `http://127.0.0.1:3000`
-
+- produce one episode at a time
+- accumulate character assets at the season level
+- prioritize performance and emotion recreation over exact voice cloning
+- confirm characters before generating the full episode
+- refine key segments instead of manually reviewing every line

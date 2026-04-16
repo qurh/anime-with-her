@@ -47,5 +47,6 @@ __pycache__/
 venv/
 
 # Local runtime data
-data/input/*
-!data/input/.gitkeep
+data/
+logs/
+models/
