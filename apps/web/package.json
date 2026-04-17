@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "node tests/smoke/test_existing_pages_contract.js",
-    "test:e2e": "node tests/smoke/test_existing_pages_contract.js && node tests/smoke/test_runs_pages_contract.js && node tests/smoke/test_run_retry_contract.js"
+    "test:e2e": "node tests/smoke/test_existing_pages_contract.js && node tests/smoke/test_runs_pages_contract.js && node tests/smoke/test_run_retry_contract.js && node tests/smoke/test_ui_tokens_contract.js"
   },
   "dependencies": {
     "next": "15.3.3",
