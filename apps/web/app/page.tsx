@@ -56,11 +56,16 @@ export default function HomePage() {
     <main className="container">
       <header className="hero">
         <h1>AI 配音导演台</h1>
-        <p>三步完成入口：创建任务、查看任务详情、按需重跑失败阶段。</p>
+        <p>把“创建任务 -> 追踪进度 -> 失败重跑”集中在同一入口，降低操作成本。</p>
       </header>
 
       <section className="panel">
         <h2>创建任务</h2>
+        <div className="step-row" aria-label="任务操作步骤">
+          <span className="step-pill">步骤 1：填写 Episode ID</span>
+          <span className="step-pill">步骤 2：提交创建任务</span>
+          <span className="step-pill">步骤 3：查看任务历史与详情</span>
+        </div>
         <form className="form-grid" onSubmit={handleRun}>
           <label className="field">
             <span>Episode ID</span>
@@ -84,12 +89,12 @@ export default function HomePage() {
       </section>
 
       <section className="panel">
-        <h2>快速入口</h2>
-        <p>
-          <Link href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}>查看该 Episode 的任务历史</Link>
+        <h2>快捷入口</h2>
+        <p className="muted">
+          任务创建成功后将自动跳转详情。你也可以直接进入历史页查看同一 Episode 的全部任务。
         </p>
         <p>
-          任务创建成功后会自动跳转到 <code>/runs/&lt;run_id&gt;</code> 详情页。
+          <Link href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}>查看任务历史</Link>
         </p>
       </section>
 
