@@ -25,6 +25,14 @@ if (!runsPage.includes("任务历史")) {
   console.error("Runs page should include task history heading.");
   process.exit(1);
 }
+if (!runsPage.includes("status-badge")) {
+  console.error("Runs page should render status-badge for readability.");
+  process.exit(1);
+}
+if (!runsPage.includes("暂无运行记录")) {
+  console.error("Runs page should include empty-state guidance.");
+  process.exit(1);
+}
 
 const runDetailPage = fs.readFileSync("app/runs/[runId]/page.tsx", "utf8");
 if (!runDetailPage.includes("阶段状态")) {

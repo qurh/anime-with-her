@@ -5,6 +5,29 @@ type PageProps = {
   searchParams: Promise<{ episode_id?: string }>;
 };
 
+function toStatusLabel(state: string): string {
+  const mapper: Record<string, string> = {
+    pending: "等待中",
+    running: "运行中",
+    success: "已完成",
+    failed: "失败",
+  };
+  return mapper[state] || "未知";
+}
+
+function toStatusClass(state: string): string {
+  if (state === "success") {
+    return "status-badge status-badge-success";
+  }
+  if (state === "failed") {
+    return "status-badge status-badge-danger";
+  }
+  if (state === "running") {
+    return "status-badge status-badge-info";
+  }
+  return "status-badge";
+}
+
 export default async function RunsPage({ searchParams }: PageProps) {
   const query = await searchParams;
   const episodeId = (query.episode_id || "episode_1").trim() || "episode_1";
@@ -22,7 +45,12 @@ export default async function RunsPage({ searchParams }: PageProps) {
       <section className="panel">
         <h2>最近运行记录</h2>
         {runs.length === 0 ? (
-          <p>暂无运行记录，请先在首页创建任务。</p>
+          <div>
+            <p>暂无运行记录，请先在首页创建任务。</p>
+            <p>
+              <Link href="/">返回首页创建任务</Link>
+            </p>
+          </div>
         ) : (
           <div className="runs-list">
             {runs.map((run) => (
@@ -30,7 +58,7 @@ export default async function RunsPage({ searchParams }: PageProps) {
                 <div>
                   <strong>{run.run_id}</strong>
                   <p>
-                    状态：{run.state}
+                    <span className={toStatusClass(run.state)}>状态：{toStatusLabel(run.state)}</span>
                     {run.failed_stage ? `（失败阶段：${run.failed_stage}）` : ""}
                   </p>
                   <p>更新时间：{new Date(run.updated_at).toLocaleString("zh-CN")}</p>

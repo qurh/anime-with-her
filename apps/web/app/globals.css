@@ -207,3 +207,31 @@ select:focus-visible {
 .run-card p {
   margin: var(--space-4) 0 0;
 }
+
+.status-badge {
+  display: inline-block;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  background: #f1f5f9;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.status-badge-info {
+  border-color: #bfdbfe;
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+.status-badge-success {
+  border-color: #bbf7d0;
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.status-badge-danger {
+  border-color: #fecaca;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
