@@ -25,6 +25,18 @@
   - `/runs/<run_id>` 查看阶段状态、错误信息、最终产物
   - 失败任务支持“从阶段重跑”入口
 
+## UI/UX 优化（2026-04-17）
+
+- 规格文档：`docs/design/2026-04-17-director-console-ui-ux-spec-v1.md`
+- 实施计划：`docs/plans/2026-04-17-director-console-ui-ux-optimization-implementation-plan.md`
+- 本轮优化点：
+  - 统一中文术语与任务状态表达（任务/阶段状态/失败原因/重跑）
+  - 引入设计 token（颜色、间距、圆角）与统一排版基线
+  - 首页步骤化引导，历史页状态徽章化，详情页诊断信息增强
+  - A11y 补齐：`role="alert"`、`aria-live`、焦点可见性
+  - 响应式与动效降级：移动端布局优化 + `prefers-reduced-motion`
+  - Smoke 契约升级，覆盖 UI token、A11y、响应式、API 错误文案
+
 ## 开发命令
 
 ```powershell
