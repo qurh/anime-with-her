@@ -204,6 +204,24 @@ select:focus-visible {
   gap: var(--space-12);
 }
 
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
+  gap: var(--space-12);
+  align-items: end;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.text-link-muted {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
 .step-row {
   display: flex;
   flex-wrap: wrap;
@@ -409,6 +427,14 @@ select:focus-visible {
 
   .run-link {
     margin-top: var(--space-8);
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    justify-content: flex-start;
   }
 
   .meta-grid {

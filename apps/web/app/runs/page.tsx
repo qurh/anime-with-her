@@ -1,21 +1,29 @@
 import Link from "next/link";
-import { listEpisodePipelineRuns } from "../../lib/api";
+import { listEpisodePipelineRuns, type PipelineRunState, type PipelineRunSummary } from "../../lib/api";
 
 type PageProps = {
-  searchParams: Promise<{ episode_id?: string }>;
+  searchParams: Promise<{ episode_id?: string; state?: string; keyword?: string }>;
 };
 
-function toStatusLabel(state: string): string {
-  const mapper: Record<string, string> = {
+const FILTER_OPTIONS: Array<{ value: "all" | PipelineRunState; label: string }> = [
+  { value: "all", label: "全部" },
+  { value: "pending", label: "等待中" },
+  { value: "running", label: "运行中" },
+  { value: "success", label: "已完成" },
+  { value: "failed", label: "失败" },
+];
+
+function toStatusLabel(state: PipelineRunState): string {
+  const mapper: Record<PipelineRunState, string> = {
     pending: "等待中",
     running: "运行中",
     success: "已完成",
     failed: "失败",
   };
-  return mapper[state] || "未知";
+  return mapper[state];
 }
 
-function toStatusClass(state: string): string {
+function toStatusClass(state: PipelineRunState): string {
   if (state === "success") {
     return "status-badge status-badge-success";
   }
@@ -28,10 +36,33 @@ function toStatusClass(state: string): string {
   return "status-badge";
 }
 
+function applyFilters(
+  runs: PipelineRunSummary[],
+  stateFilter: "all" | PipelineRunState,
+  keyword: string,
+): PipelineRunSummary[] {
+  return runs.filter((run) => {
+    if (stateFilter !== "all" && run.state !== stateFilter) {
+      return false;
+    }
+    if (!keyword) {
+      return true;
+    }
+    return run.run_id.toLowerCase().includes(keyword.toLowerCase());
+  });
+}
+
 export default async function RunsPage({ searchParams }: PageProps) {
   const query = await searchParams;
   const episodeId = (query.episode_id || "episode_1").trim() || "episode_1";
+  const stateFilterRaw = (query.state || "all").trim() as "all" | PipelineRunState;
+  const stateFilter = FILTER_OPTIONS.some((item) => item.value === stateFilterRaw)
+    ? stateFilterRaw
+    : "all";
+  const keyword = (query.keyword || "").trim();
+
   const runs = await listEpisodePipelineRuns(episodeId, 20);
+  const filteredRuns = applyFilters(runs, stateFilter, keyword);
 
   const statPending = runs.filter((item) => item.state === "pending").length;
   const statRunning = runs.filter((item) => item.state === "running").length;
@@ -43,7 +74,7 @@ export default async function RunsPage({ searchParams }: PageProps) {
         <span className="hero-eyebrow">Run History</span>
         <h1>任务历史</h1>
         <p>
-          当前 Episode：<strong>{episodeId}</strong>。可快速定位失败任务并进入详情执行重跑。
+          当前 Episode：<strong>{episodeId}</strong>。可按状态筛选、按任务 ID 搜索，快速定位失败任务并进入详情执行重跑。
         </p>
       </header>
 
@@ -57,6 +88,37 @@ export default async function RunsPage({ searchParams }: PageProps) {
       </section>
 
       <section className="panel">
+        <form className="filter-grid" action="/runs" method="get">
+          <input type="hidden" name="episode_id" value={episodeId} />
+          <label className="field">
+            <span>状态筛选</span>
+            <select name="state" defaultValue={stateFilter}>
+              {FILTER_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>搜索任务</span>
+            <input name="keyword" defaultValue={keyword} placeholder="输入 run_id 关键字" />
+          </label>
+          <div className="filter-actions">
+            <button className="run-button" type="submit">
+              应用筛选
+            </button>
+            <Link
+              className="text-link-muted"
+              href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}
+            >
+              清空
+            </Link>
+          </div>
+        </form>
+      </section>
+
+      <section className="panel">
         <h2>最近运行记录</h2>
         {runs.length === 0 ? (
           <div>
@@ -65,9 +127,13 @@ export default async function RunsPage({ searchParams }: PageProps) {
               <Link href="/">返回首页创建任务</Link>
             </p>
           </div>
+        ) : filteredRuns.length === 0 ? (
+          <div>
+            <p>没有匹配的任务，请调整筛选条件后重试。</p>
+          </div>
         ) : (
           <div className="runs-list">
-            {runs.map((run) => (
+            {filteredRuns.map((run) => (
               <article className="run-card" key={run.run_id}>
                 <div className="run-card-main">
                   <strong className="mono">{run.run_id}</strong>
