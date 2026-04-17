@@ -132,7 +132,7 @@ export default function RunDetailPage() {
     <main className="container">
       <header className="hero">
         <h1>任务详情</h1>
-        <p>Run ID：{runId}</p>
+        <p>任务 ID：{runId}</p>
       </header>
 
       {loading ? <p>加载中...</p> : null}
@@ -143,8 +143,8 @@ export default function RunDetailPage() {
           <section className="panel">
             <h2>总体状态</h2>
             <p>任务状态：{run.state}</p>
-            <p>Episode：{run.episode_id}</p>
-            <p>源视频：{run.source_video}</p>
+            <p>Episode ID：{run.episode_id}</p>
+            <p>源视频路径：{run.source_video}</p>
             <p>预估成本：¥{run.estimated_cost_cny.toFixed(2)}</p>
             <p>预估时长：{run.estimated_duration_seconds}s</p>
             {run.error_message ? <p className="error">失败原因：{run.error_message}</p> : null}
@@ -173,7 +173,7 @@ export default function RunDetailPage() {
               <h2>从失败阶段重跑</h2>
               <form className="form-grid" onSubmit={handleRetry}>
                 <label className="field">
-                  <span>start_stage</span>
+                  <span>start_stage（重跑起点）</span>
                   <select value={retryStage} onChange={(event) => setRetryStage(event.target.value)}>
                     {STAGE_ORDER.map((stage) => (
                       <option key={stage} value={stage}>

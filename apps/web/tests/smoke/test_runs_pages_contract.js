@@ -35,5 +35,25 @@ if (!runDetailPage.includes("最终产物")) {
   console.error("Run detail page should include final outputs section.");
   process.exit(1);
 }
+if (!runDetailPage.includes("任务详情")) {
+  console.error("Run detail page should include Chinese heading: 任务详情.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("任务 ID")) {
+  console.error("Run detail page should include Chinese label: 任务 ID.");
+  process.exit(1);
+}
+if (runDetailPage.includes("Run ID")) {
+  console.error("Run detail page should not expose mixed English label: Run ID.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("失败原因")) {
+  console.error("Run detail page should include Chinese label: 失败原因.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("返回任务历史")) {
+  console.error("Run detail page should include action: 返回任务历史.");
+  process.exit(1);
+}
 
 console.log("web runs pages contract ok");
