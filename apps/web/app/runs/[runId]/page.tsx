@@ -25,6 +25,8 @@ type Envelope<T> = {
   error?: string;
 };
 
+type StageState = "pending" | "running" | "success" | "failed";
+
 const STAGE_ORDER = [
   "media_ingest",
   "audio_separation",
@@ -71,6 +73,7 @@ export default function RunDetailPage() {
   const [retryStage, setRetryStage] = useState("tts_synthesis");
   const [retrying, setRetrying] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState("");
+  const [onlyFailedStages, setOnlyFailedStages] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,15 +118,33 @@ export default function RunDetailPage() {
 
   const orderedStageStates = useMemo(() => {
     if (!run) {
-      return [];
+      return [] as Array<{ stage: string; state: StageState }>;
     }
     const keys = Object.keys(run.stage_states);
     const merged = [...STAGE_ORDER, ...keys.filter((key) => !STAGE_ORDER.includes(key))];
     return merged.map((stage) => ({
       stage,
-      state: run.stage_states[stage] || "pending",
+      state: (run.stage_states[stage] || "pending") as StageState,
     }));
   }, [run]);
+
+  const stageSummary = useMemo(() => {
+    const summary = { total: orderedStageStates.length, success: 0, failed: 0, running: 0, pending: 0 };
+    for (const item of orderedStageStates) {
+      if (item.state === "success") summary.success += 1;
+      else if (item.state === "failed") summary.failed += 1;
+      else if (item.state === "running") summary.running += 1;
+      else summary.pending += 1;
+    }
+    return summary;
+  }, [orderedStageStates]);
+
+  const visibleStages = useMemo(() => {
+    if (!onlyFailedStages) {
+      return orderedStageStates;
+    }
+    return orderedStageStates.filter((item) => item.state === "failed");
+  }, [onlyFailedStages, orderedStageStates]);
 
   async function handleRetry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,7 +204,7 @@ export default function RunDetailPage() {
               </p>
               <p>Episode ID：{run.episode_id}</p>
               <p>源视频路径：{run.source_video}</p>
-              <p>预估成本：¥{run.estimated_cost_cny.toFixed(2)}</p>
+              <p>预估成本：￥{run.estimated_cost_cny.toFixed(2)}</p>
               <p>预估时长：{run.estimated_duration_seconds}s</p>
               <p>上次刷新时间：{lastRefreshedAt || "尚未刷新"}</p>
               {run.failed_stage ? <p>失败阶段：{run.failed_stage}</p> : null}
@@ -192,14 +213,34 @@ export default function RunDetailPage() {
           </section>
 
           <section className="panel">
-            <h2>阶段状态</h2>
+            <div className="stage-header-row">
+              <h2>阶段状态</h2>
+              <button
+                className="run-button run-button-secondary"
+                type="button"
+                onClick={() => setOnlyFailedStages((value) => !value)}
+              >
+                {onlyFailedStages ? "查看全部阶段" : "仅看异常阶段"}
+              </button>
+            </div>
+            <div className="kpi-row" aria-label="阶段摘要">
+              <span className="kpi-chip">阶段摘要：共 {stageSummary.total} 个</span>
+              <span className="kpi-chip">已完成：{stageSummary.success}</span>
+              <span className="kpi-chip">运行中：{stageSummary.running}</span>
+              <span className="kpi-chip">等待中：{stageSummary.pending}</span>
+              <span className="kpi-chip kpi-chip-danger">失败：{stageSummary.failed}</span>
+            </div>
             <div className="stage-list">
-              {orderedStageStates.map((item) => (
-                <div className="stage-item" key={item.stage}>
-                  <strong className="mono">{item.stage}</strong>
-                  <span className={toStateClass(item.state)}>{toStateLabel(item.state)}</span>
-                </div>
-              ))}
+              {visibleStages.length === 0 ? (
+                <p className="muted">当前没有异常阶段。</p>
+              ) : (
+                visibleStages.map((item) => (
+                  <div className="stage-item" key={item.stage}>
+                    <strong className="mono">{item.stage}</strong>
+                    <span className={toStateClass(item.state)}>{toStateLabel(item.state)}</span>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 
