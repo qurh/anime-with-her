@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import LoadingSkeleton from "../../components/LoadingSkeleton";
 
 type PipelineRunDetail = {
   run_id: string;
@@ -187,7 +188,12 @@ export default function RunDetailPage() {
         </p>
       </header>
 
-      {loading ? <p aria-live="polite">加载中（运行中任务每 2 秒刷新）...</p> : null}
+      {loading && !run ? (
+        <>
+          <p aria-live="polite">加载中（运行中任务每 2 秒刷新）...</p>
+          <LoadingSkeleton lines={7} />
+        </>
+      ) : null}
       {error ? (
         <p className="error" role="alert" aria-live="assertive">
           {error}

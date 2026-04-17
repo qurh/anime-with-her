@@ -372,6 +372,43 @@ select:focus-visible {
   margin-top: var(--space-12);
 }
 
+.skeleton-group {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    rgba(214, 225, 239, 0.65) 25%,
+    rgba(234, 241, 250, 0.92) 50%,
+    rgba(214, 225, 239, 0.65) 75%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-loading 1.2s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 30px;
+  width: 42%;
+  margin-bottom: var(--space-12);
+}
+
+.skeleton-line {
+  height: 18px;
+  width: 100%;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
 .stage-header-row {
   display: flex;
   align-items: center;
@@ -515,5 +552,9 @@ select:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .skeleton {
+    animation: none;
   }
 }
