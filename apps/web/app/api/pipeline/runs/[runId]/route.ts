@@ -23,7 +23,7 @@ export async function GET(_: Request, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "任务详情查询失败。",
+        error: error instanceof Error ? error.message : "查询任务详情失败，请稍后重试。",
       },
       { status: 500 },
     );

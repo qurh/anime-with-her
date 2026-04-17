@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "后端执行失败。",
+        error: error instanceof Error ? error.message : "创建任务失败，请稍后重试。",
       },
       { status: 500 },
     );

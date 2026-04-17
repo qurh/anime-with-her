@@ -17,23 +17,23 @@ const api = fs.readFileSync("lib/api.ts", "utf8");
 const runRoute = fs.readFileSync("app/api/pipeline/run/route.ts", "utf8");
 const runsRoute = fs.readFileSync("app/api/pipeline/runs/[runId]/route.ts", "utf8");
 
-if (!api.includes("后端请求失败")) {
+if (!api.includes("后端请求失败。")) {
   console.error("lib/api.ts should include normalized error text: 后端请求失败。");
   process.exit(1);
 }
-if (!runRoute.includes("episode_id 和 source_video 为必填项")) {
+if (!runRoute.includes("episode_id 和 source_video 为必填项。")) {
   console.error("run route should include normalized param validation text.");
   process.exit(1);
 }
-if (!runRoute.includes("后端执行失败")) {
+if (!runRoute.includes("创建任务失败，请稍后重试。")) {
   console.error("run route should include normalized backend failure text.");
   process.exit(1);
 }
-if (!runsRoute.includes("run_id 不能为空")) {
+if (!runsRoute.includes("run_id 不能为空。")) {
   console.error("runs route should include normalized missing run_id text.");
   process.exit(1);
 }
-if (!runsRoute.includes("任务详情查询失败")) {
+if (!runsRoute.includes("查询任务详情失败，请稍后重试。")) {
   console.error("runs route should include normalized detail query failure text.");
   process.exit(1);
 }
