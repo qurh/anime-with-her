@@ -204,6 +204,16 @@ select:focus-visible {
   gap: var(--space-12);
 }
 
+.guide-list {
+  margin-top: var(--space-12);
+  display: grid;
+  gap: var(--space-8);
+}
+
+.guide-list p {
+  margin: 0;
+}
+
 .filter-grid {
   display: grid;
   grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;

@@ -67,6 +67,7 @@ export default function HomePage() {
           <span className="step-pill">步骤 2：提交创建任务</span>
           <span className="step-pill">步骤 3：查看任务历史与详情</span>
         </div>
+        <p className="muted">创建后将自动跳转到任务详情页，无需手动查询任务 ID。</p>
 
         <form className="form-grid" onSubmit={handleRun}>
           <label className="field">
@@ -91,12 +92,16 @@ export default function HomePage() {
             {loading ? "创建中..." : "创建任务"}
           </button>
         </form>
+        <div className="guide-list">
+          <p className="muted">预计处理时长：20-40 分钟（受视频时长、声轨复杂度和重跑次数影响）。</p>
+          <p className="muted">路径规范提示：建议统一放在 `data/input` 与 `data/episodes`，便于排障与复用。</p>
+        </div>
       </section>
 
       <section className="panel">
         <h2>快捷入口</h2>
         <p className="muted">
-          创建成功后会自动跳转任务详情。你也可以直接进入历史页，查看同一 Episode 的全部任务。
+          创建后将自动跳转任务详情。你也可以直接进入历史页，查看同一 Episode 的全部任务。
         </p>
         <p>
           <Link href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}>查看任务历史</Link>
