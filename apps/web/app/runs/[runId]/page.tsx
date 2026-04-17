@@ -47,6 +47,7 @@ export default function RunDetailPage() {
   const [error, setError] = useState("");
   const [retryStage, setRetryStage] = useState("tts_synthesis");
   const [retrying, setRetrying] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +65,7 @@ export default function RunDetailPage() {
         }
         setRun(payload.data);
         setRetryStage(payload.data.failed_stage || "tts_synthesis");
+        setLastRefreshedAt(new Date().toLocaleString("zh-CN"));
         setError("");
         if (payload.data.state === "pending" || payload.data.state === "running") {
           timer = setTimeout(pullRunStatus, 2000);
@@ -147,6 +149,8 @@ export default function RunDetailPage() {
             <p>源视频路径：{run.source_video}</p>
             <p>预估成本：¥{run.estimated_cost_cny.toFixed(2)}</p>
             <p>预估时长：{run.estimated_duration_seconds}s</p>
+            <p>上次刷新时间：{lastRefreshedAt || "尚未刷新"}</p>
+            {run.failed_stage ? <p>失败阶段：{run.failed_stage}</p> : null}
             {run.error_message ? <p className="error">失败原因：{run.error_message}</p> : null}
           </section>
 

@@ -17,6 +17,14 @@ if (!detailContent.includes("从失败阶段重跑")) {
   console.error("Run detail page should expose retry entry.");
   process.exit(1);
 }
+if (!detailContent.includes("重跑起点")) {
+  console.error("Run detail page should explain retry stage selection.");
+  process.exit(1);
+}
+if (!detailContent.includes("上次刷新时间")) {
+  console.error("Run detail page should include diagnostics refresh timestamp.");
+  process.exit(1);
+}
 if (!detailContent.includes("start_stage")) {
   console.error("Run detail page should pass start_stage.");
   process.exit(1);
