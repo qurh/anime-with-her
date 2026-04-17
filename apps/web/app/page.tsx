@@ -98,7 +98,11 @@ export default function HomePage() {
         </p>
       </section>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert" aria-live="assertive">
+          {error}
+        </p>
+      ) : null}
     </main>
   );
 }

@@ -137,8 +137,12 @@ export default function RunDetailPage() {
         <p>任务 ID：{runId}</p>
       </header>
 
-      {loading ? <p>加载中...</p> : null}
-      {error ? <p className="error">{error}</p> : null}
+      {loading ? <p aria-live="polite">加载中...</p> : null}
+      {error ? (
+        <p className="error" role="alert" aria-live="assertive">
+          {error}
+        </p>
+      ) : null}
 
       {run ? (
         <>
