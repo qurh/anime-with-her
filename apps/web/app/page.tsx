@@ -55,31 +55,36 @@ export default function HomePage() {
   return (
     <main className="container">
       <header className="hero">
+        <span className="hero-eyebrow">AI Dubbing Director Console</span>
         <h1>AI 配音导演台</h1>
-        <p>把“创建任务 -> 追踪进度 -> 失败重跑”集中在同一入口，降低操作成本。</p>
+        <p>把“创建任务 -> 追踪进度 -> 失败重跑”压缩成一条清晰流程，尽量减少切页和重复操作。</p>
       </header>
 
-      <section className="panel">
+      <section className="panel panel-highlight">
         <h2>创建任务</h2>
         <div className="step-row" aria-label="任务操作步骤">
           <span className="step-pill">步骤 1：填写 Episode ID</span>
           <span className="step-pill">步骤 2：提交创建任务</span>
           <span className="step-pill">步骤 3：查看任务历史与详情</span>
         </div>
+
         <form className="form-grid" onSubmit={handleRun}>
           <label className="field">
             <span>Episode ID</span>
             <input value={episodeId} onChange={(event) => setEpisodeId(event.target.value)} required />
+            <small className="field-hint">建议使用“剧名_集号”命名，方便后续追踪历史任务。</small>
           </label>
 
           <label className="field">
             <span>源视频路径</span>
             <input value={sourceVideo} onChange={(event) => setSourceVideo(event.target.value)} required />
+            <small className="field-hint">支持本地路径（如 `data/input/demo.mkv`）。</small>
           </label>
 
           <label className="field">
             <span>工作目录（可选）</span>
             <input value={root} onChange={(event) => setRoot(event.target.value)} />
+            <small className="field-hint">默认会写入 `data/episodes`。</small>
           </label>
 
           <button className="run-button" type="submit" disabled={loading || !episodeId || !sourceVideo}>
@@ -91,7 +96,7 @@ export default function HomePage() {
       <section className="panel">
         <h2>快捷入口</h2>
         <p className="muted">
-          任务创建成功后将自动跳转详情。你也可以直接进入历史页查看同一 Episode 的全部任务。
+          创建成功后会自动跳转任务详情。你也可以直接进入历史页，查看同一 Episode 的全部任务。
         </p>
         <p>
           <Link href={`/runs?episode_id=${encodeURIComponent(episodeId)}`}>查看任务历史</Link>

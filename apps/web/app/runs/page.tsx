@@ -33,14 +33,28 @@ export default async function RunsPage({ searchParams }: PageProps) {
   const episodeId = (query.episode_id || "episode_1").trim() || "episode_1";
   const runs = await listEpisodePipelineRuns(episodeId, 20);
 
+  const statPending = runs.filter((item) => item.state === "pending").length;
+  const statRunning = runs.filter((item) => item.state === "running").length;
+  const statFailed = runs.filter((item) => item.state === "failed").length;
+
   return (
     <main className="container">
       <header className="hero">
+        <span className="hero-eyebrow">Run History</span>
         <h1>任务历史</h1>
         <p>
-          当前 Episode：<strong>{episodeId}</strong>。可进入详情查看阶段状态、失败原因和最终产物。
+          当前 Episode：<strong>{episodeId}</strong>。可快速定位失败任务并进入详情执行重跑。
         </p>
       </header>
+
+      <section className="panel panel-compact">
+        <div className="kpi-row">
+          <span className="kpi-chip">总任务：{runs.length}</span>
+          <span className="kpi-chip">等待中：{statPending}</span>
+          <span className="kpi-chip">运行中：{statRunning}</span>
+          <span className="kpi-chip kpi-chip-danger">失败：{statFailed}</span>
+        </div>
+      </section>
 
       <section className="panel">
         <h2>最近运行记录</h2>
@@ -55,15 +69,17 @@ export default async function RunsPage({ searchParams }: PageProps) {
           <div className="runs-list">
             {runs.map((run) => (
               <article className="run-card" key={run.run_id}>
-                <div>
-                  <strong>{run.run_id}</strong>
+                <div className="run-card-main">
+                  <strong className="mono">{run.run_id}</strong>
                   <p>
                     <span className={toStatusClass(run.state)}>状态：{toStatusLabel(run.state)}</span>
                     {run.failed_stage ? `（失败阶段：${run.failed_stage}）` : ""}
                   </p>
-                  <p>更新时间：{new Date(run.updated_at).toLocaleString("zh-CN")}</p>
+                  <p className="muted">更新时间：{new Date(run.updated_at).toLocaleString("zh-CN")}</p>
                 </div>
-                <Link href={`/runs/${run.run_id}?episode_id=${encodeURIComponent(episodeId)}`}>查看详情</Link>
+                <Link className="run-link" href={`/runs/${run.run_id}?episode_id=${encodeURIComponent(episodeId)}`}>
+                  查看详情
+                </Link>
               </article>
             ))}
           </div>

@@ -35,6 +35,29 @@ const STAGE_ORDER = [
   "mix_master",
 ];
 
+function toStateLabel(state: string): string {
+  const mapper: Record<string, string> = {
+    pending: "等待中",
+    running: "运行中",
+    success: "已完成",
+    failed: "失败",
+  };
+  return mapper[state] || "未知";
+}
+
+function toStateClass(state: string): string {
+  if (state === "success") {
+    return "status-badge status-badge-success";
+  }
+  if (state === "failed") {
+    return "status-badge status-badge-danger";
+  }
+  if (state === "running") {
+    return "status-badge status-badge-info";
+  }
+  return "status-badge";
+}
+
 export default function RunDetailPage() {
   const params = useParams<{ runId: string }>();
   const router = useRouter();
@@ -96,7 +119,10 @@ export default function RunDetailPage() {
     }
     const keys = Object.keys(run.stage_states);
     const merged = [...STAGE_ORDER, ...keys.filter((key) => !STAGE_ORDER.includes(key))];
-    return merged.map((stage) => ({ stage, state: run.stage_states[stage] || "pending" }));
+    return merged.map((stage) => ({
+      stage,
+      state: run.stage_states[stage] || "pending",
+    }));
   }, [run]);
 
   async function handleRetry(event: FormEvent<HTMLFormElement>) {
@@ -133,11 +159,14 @@ export default function RunDetailPage() {
   return (
     <main className="container">
       <header className="hero">
+        <span className="hero-eyebrow">Run Detail</span>
         <h1>任务详情</h1>
-        <p>任务 ID：{runId}</p>
+        <p>
+          任务 ID：<span className="mono">{runId}</span>
+        </p>
       </header>
 
-      {loading ? <p aria-live="polite">加载中...</p> : null}
+      {loading ? <p aria-live="polite">加载中（运行中任务每 2 秒刷新）...</p> : null}
       {error ? (
         <p className="error" role="alert" aria-live="assertive">
           {error}
@@ -148,13 +177,17 @@ export default function RunDetailPage() {
         <>
           <section className="panel">
             <h2>总体状态</h2>
-            <p>任务状态：{run.state}</p>
-            <p>Episode ID：{run.episode_id}</p>
-            <p>源视频路径：{run.source_video}</p>
-            <p>预估成本：¥{run.estimated_cost_cny.toFixed(2)}</p>
-            <p>预估时长：{run.estimated_duration_seconds}s</p>
-            <p>上次刷新时间：{lastRefreshedAt || "尚未刷新"}</p>
-            {run.failed_stage ? <p>失败阶段：{run.failed_stage}</p> : null}
+            <div className="meta-grid">
+              <p>
+                任务状态：<span className={toStateClass(run.state)}>{toStateLabel(run.state)}</span>
+              </p>
+              <p>Episode ID：{run.episode_id}</p>
+              <p>源视频路径：{run.source_video}</p>
+              <p>预估成本：¥{run.estimated_cost_cny.toFixed(2)}</p>
+              <p>预估时长：{run.estimated_duration_seconds}s</p>
+              <p>上次刷新时间：{lastRefreshedAt || "尚未刷新"}</p>
+              {run.failed_stage ? <p>失败阶段：{run.failed_stage}</p> : null}
+            </div>
             {run.error_message ? <p className="error">失败原因：{run.error_message}</p> : null}
           </section>
 
@@ -163,8 +196,8 @@ export default function RunDetailPage() {
             <div className="stage-list">
               {orderedStageStates.map((item) => (
                 <div className="stage-item" key={item.stage}>
-                  <strong>{item.stage}</strong>
-                  <span>{item.state}</span>
+                  <strong className="mono">{item.stage}</strong>
+                  <span className={toStateClass(item.state)}>{toStateLabel(item.state)}</span>
                 </div>
               ))}
             </div>
@@ -172,13 +205,18 @@ export default function RunDetailPage() {
 
           <section className="panel">
             <h2>最终产物</h2>
-            <p>最终音频：{run.final_audio_path || "尚未产出"}</p>
-            <p>最终视频：{run.final_video_path || "尚未产出"}</p>
+            <p>
+              最终音频：<span className="mono">{run.final_audio_path || "尚未产出"}</span>
+            </p>
+            <p>
+              最终视频：<span className="mono">{run.final_video_path || "尚未产出"}</span>
+            </p>
           </section>
 
           {run.state === "failed" ? (
-            <section className="panel">
+            <section className="panel panel-highlight">
               <h2>从失败阶段重跑</h2>
+              <p className="muted">重跑起点会写入 `start_stage`，并创建一个新的任务记录。</p>
               <form className="form-grid" onSubmit={handleRetry}>
                 <label className="field">
                   <span>start_stage（重跑起点）</span>
