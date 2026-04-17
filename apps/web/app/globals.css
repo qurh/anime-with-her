@@ -35,6 +35,10 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-pill: 999px;
+
+  --motion-fast: 120ms;
+  --motion-normal: 200ms;
+  --motion-slow: 240ms;
 }
 
 * {
@@ -116,9 +120,12 @@ select:focus-visible {
 }
 
 .topbar-nav a {
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
   font-size: 14px;
   padding: 6px 12px;
+  min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-surface-elevated);
@@ -285,6 +292,7 @@ select:focus-visible {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   padding: 10px 12px;
+  min-height: 44px;
   font-size: 16px;
   background: var(--color-surface-elevated);
   color: var(--color-text);
@@ -302,9 +310,9 @@ select:focus-visible {
   background: linear-gradient(135deg, var(--color-primary) 0%, #157e9f 100%);
   cursor: pointer;
   transition:
-    background-color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+    background-color var(--motion-normal) ease,
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-slow) ease;
 }
 
 .run-button:hover:enabled {
@@ -396,8 +404,8 @@ select:focus-visible {
   background: var(--color-surface-elevated);
   padding: 12px;
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    border-color var(--motion-normal) ease,
+    box-shadow var(--motion-slow) ease;
 }
 
 .run-card:hover {
@@ -415,6 +423,9 @@ select:focus-visible {
 
 .run-link {
   align-self: center;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   white-space: nowrap;
 }
 
