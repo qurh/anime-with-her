@@ -20,6 +20,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-CN">
       <body className={notoSansSc.variable}>
+        <a className="skip-link" href="#main-content">
+          跳到主内容
+        </a>
         <header className="topbar">
           <div className="topbar-inner">
             <Link className="brand" href="/">

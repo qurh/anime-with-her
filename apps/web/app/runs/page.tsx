@@ -69,7 +69,7 @@ export default async function RunsPage({ searchParams }: PageProps) {
   const statFailed = runs.filter((item) => item.state === "failed").length;
 
   return (
-    <main className="container">
+    <main id="main-content" className="container">
       <header className="hero">
         <span className="hero-eyebrow">Run History</span>
         <h1>任务历史</h1>

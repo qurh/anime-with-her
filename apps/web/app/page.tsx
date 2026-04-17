@@ -53,7 +53,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="container">
+    <main id="main-content" className="container">
       <header className="hero">
         <span className="hero-eyebrow">AI Dubbing Director Console</span>
         <h1>AI 配音导演台</h1>

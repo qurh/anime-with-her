@@ -178,7 +178,7 @@ export default function RunDetailPage() {
   }
 
   return (
-    <main className="container">
+    <main id="main-content" className="container">
       <header className="hero">
         <span className="hero-eyebrow">Run Detail</span>
         <h1>任务详情</h1>
