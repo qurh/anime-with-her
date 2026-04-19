@@ -4,7 +4,15 @@ from pathlib import Path
 from worker.adapters.asr_align import run_asr_align
 
 
-def test_asr_align_builds_expected_contract_and_artifacts(tmp_path: Path):
+def test_asr_align_builds_expected_contract_and_artifacts(tmp_path: Path, monkeypatch):
+    # Pin env so this contract test is deterministic regardless of shell/session vars.
+    monkeypatch.setenv("WORKER_MODE", "fake")
+    monkeypatch.delenv("WORKER_REAL_STAGES", raising=False)
+    monkeypatch.delenv("ASR_RUNTIME_READY", raising=False)
+    monkeypatch.delenv("ASR_MODEL_PATH", raising=False)
+    monkeypatch.delenv("WHISPER_MODEL", raising=False)
+    monkeypatch.delenv("WHISPER_MODEL_PATH", raising=False)
+
     result = run_asr_align(
         episode_id="episode_1",
         vocals_path="data/episodes/episode_1/analysis/separation/vocals.wav",

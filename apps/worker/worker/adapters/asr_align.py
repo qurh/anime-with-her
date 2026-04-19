@@ -24,8 +24,7 @@ def _run_fake_asr(segments_path: Path) -> list[dict[str, object]]:
 
 
 def _run_real_asr(episode_id: str, vocals_path: str, segments_path: Path) -> list[dict[str, object]]:
-    # Placeholder live path for current milestone; keeps artifact contract stable.
-    return _run_fake_asr(segments_path)
+    raise NotImplementedError("real asr runner is not implemented")
 
 
 def run_asr_align(

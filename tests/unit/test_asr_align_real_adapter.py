@@ -43,3 +43,59 @@ def test_asr_real_mode_uses_live_path_when_model_available(tmp_path: Path, monke
     segments_path = Path(result["artifacts"]["segments_path"])
     assert segments_path.exists()
     assert result["artifacts"]["segments"][0]["segment_id"] == "seg_real_1"
+
+
+def test_asr_real_mode_falls_back_when_runtime_unavailable(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("WORKER_MODE", "real")
+    monkeypatch.delenv("WORKER_REAL_STAGES", raising=False)
+    monkeypatch.setattr(asr_align_module, "_asr_runtime_ready", lambda: False, raising=False)
+
+    result = asr_align_module.run_asr_align(
+        episode_id="episode_real_2",
+        vocals_path="data/episodes/episode_real_2/analysis/separation/vocals.wav",
+        root=str(tmp_path / "episodes"),
+    )
+
+    assert result["execution_mode"] == "fake"
+    assert "runtime unavailable" in result["warnings"][0]
+    assert Path(result["artifacts"]["segments_path"]).exists()
+    assert result["artifacts"]["segments"][0]["segment_id"] == "seg_1"
+
+
+def test_asr_real_mode_falls_back_when_real_runner_raises(tmp_path: Path, monkeypatch):
+    def _raise_real_asr(episode_id: str, vocals_path: str, segments_path: Path):
+        raise RuntimeError("mock asr crash")
+
+    monkeypatch.setenv("WORKER_MODE", "real")
+    monkeypatch.delenv("WORKER_REAL_STAGES", raising=False)
+    monkeypatch.setattr(asr_align_module, "_asr_runtime_ready", lambda: True, raising=False)
+    monkeypatch.setattr(asr_align_module, "_run_real_asr", _raise_real_asr, raising=False)
+
+    result = asr_align_module.run_asr_align(
+        episode_id="episode_real_3",
+        vocals_path="data/episodes/episode_real_3/analysis/separation/vocals.wav",
+        root=str(tmp_path / "episodes"),
+    )
+
+    assert result["execution_mode"] == "fake"
+    assert "fallback to fake align" in result["warnings"][0]
+    assert "mock asr crash" in result["warnings"][0]
+    assert Path(result["artifacts"]["segments_path"]).exists()
+    assert result["artifacts"]["segments"][0]["segment_id"] == "seg_1"
+
+
+def test_asr_real_mode_default_runner_reports_fake_until_implemented(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("WORKER_MODE", "real")
+    monkeypatch.delenv("WORKER_REAL_STAGES", raising=False)
+    monkeypatch.setattr(asr_align_module, "_asr_runtime_ready", lambda: True, raising=False)
+
+    result = asr_align_module.run_asr_align(
+        episode_id="episode_real_4",
+        vocals_path="data/episodes/episode_real_4/analysis/separation/vocals.wav",
+        root=str(tmp_path / "episodes"),
+    )
+
+    assert result["execution_mode"] == "fake"
+    assert "not implemented" in result["warnings"][0].lower()
+    assert Path(result["artifacts"]["segments_path"]).exists()
+    assert result["artifacts"]["segments"][0]["segment_id"] == "seg_1"
