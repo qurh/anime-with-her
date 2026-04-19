@@ -4,7 +4,14 @@ from pathlib import Path
 from worker.adapters.speaker_role import run_speaker_role
 
 
-def test_speaker_role_builds_expected_contract_and_artifacts(tmp_path: Path):
+def test_speaker_role_builds_expected_contract_and_artifacts(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("WORKER_MODE", "fake")
+    monkeypatch.delenv("WORKER_REAL_STAGES", raising=False)
+    monkeypatch.delenv("DIARIZATION_RUNTIME_READY", raising=False)
+    monkeypatch.delenv("DIARIZATION_MODEL_PATH", raising=False)
+    monkeypatch.delenv("SPEAKER_ROLE_MODEL_PATH", raising=False)
+    monkeypatch.delenv("PYANNOTE_TOKEN", raising=False)
+
     result = run_speaker_role(
         episode_id="episode_1",
         segments_path="data/episodes/episode_1/analysis/asr_align/segments.json",
