@@ -12,18 +12,21 @@
 
 - `docs/design/2026-04-16-ai-dubbing-director-console-integrated-design-v2-1.md`
 
-## 当前能力（Phase 2 + UI/UX Round 2）
+## 当前能力（Phase 3）
 
 - 后端任务编排
   - `run_id` 创建、状态查询、按集历史查询
   - 支持 `start_stage` 从失败阶段重跑
-  - 返回 `cost_summary` 与 `qa_summary`
+  - 返回 `cost_summary`、`qa_summary`、`warnings`
 - Worker 七阶段执行链路
   - `media_ingest` → `audio_separation` → `asr_align` → `speaker_role` → `dub_script` → `tts_synthesis` → `mix_master`
+  - TTS/ASR/Speaker 均支持 real/hybrid/fake 路由与失败回退
+  - QA 指标改为产物驱动，并包含 `threshold_flags`
 - 前端导演台
   - 首页创建任务后自动跳转详情
   - 历史页支持状态筛选 + `run_id` 搜索
   - 详情页支持阶段摘要、异常聚焦、失败重跑
+  - 详情页新增 `质量评分`、`阶段告警`、`成本摘要` 诊断区
   - 增加骨架屏、可访问性地标、动效降级与触控区规范
 
 ## UI/UX 文档
@@ -44,6 +47,7 @@ npm run dev:web
 python -m pytest -q apps/backend/tests
 $env:PYTHONPATH="apps/worker"; python -m pytest -q tests/unit
 npm.cmd --prefix apps/web run test:e2e
+npm.cmd --prefix apps/web run test:playwright
 ```
 
 ## 关键接口
