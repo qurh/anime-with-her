@@ -4,21 +4,13 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
+import type {
+  PipelineRunDetail as ApiPipelineRunDetail,
+  PipelineRunQASummary,
+  PipelineRunThresholdFlag,
+} from "../../../lib/api";
 
-type PipelineRunDetail = {
-  run_id: string;
-  episode_id: string;
-  source_video: string;
-  root: string;
-  state: "pending" | "running" | "success" | "failed";
-  stage_states: Record<string, string>;
-  failed_stage: string | null;
-  error_message: string | null;
-  final_audio_path: string;
-  final_video_path: string;
-  estimated_cost_cny: number;
-  estimated_duration_seconds: number;
-};
+type PipelineRunDetail = ApiPipelineRunDetail;
 
 type Envelope<T> = {
   success: boolean;
@@ -37,6 +29,50 @@ const STAGE_ORDER = [
   "tts_synthesis",
   "mix_master",
 ];
+
+const QA_SCORE_ITEMS: Array<{
+  key: "timing_fit_score" | "voice_stability_score" | "mix_balance_score";
+  label: string;
+}> = [
+  { key: "timing_fit_score", label: "时序贴合" },
+  { key: "voice_stability_score", label: "音色稳定" },
+  { key: "mix_balance_score", label: "混音平衡" },
+];
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function toMetricLabel(metric: string): string {
+  const labels: Record<string, string> = {
+    timing_fit_score: "时序贴合",
+    voice_stability_score: "音色稳定",
+    mix_balance_score: "混音平衡",
+  };
+  return labels[metric] || metric;
+}
+
+function formatCurrency(value: number | null): string {
+  if (value === null) {
+    return "暂无";
+  }
+  return `￥${value.toFixed(2)}`;
+}
+
+function formatDuration(value: number | null): string {
+  if (value === null) {
+    return "暂无";
+  }
+  return `${Math.round(value)}s`;
+}
+
+function normalizeThresholdFlags(summary: PipelineRunQASummary): Array<{ metric: string; flag: PipelineRunThresholdFlag }> {
+  const rawFlags = summary.threshold_flags;
+  if (!rawFlags) {
+    return [];
+  }
+  return Object.entries(rawFlags).map(([metric, flag]) => ({ metric, flag }));
+}
 
 function toStateLabel(state: string): string {
   const mapper: Record<string, string> = {
@@ -147,6 +183,45 @@ export default function RunDetailPage() {
     return orderedStageStates.filter((item) => item.state === "failed");
   }, [onlyFailedStages, orderedStageStates]);
 
+  const qaScores = useMemo(() => {
+    if (!run) {
+      return [] as Array<{ key: string; label: string; value: number }>;
+    }
+    const scores: Array<{ key: string; label: string; value: number }> = [];
+    for (const item of QA_SCORE_ITEMS) {
+      const value = run.qa_summary[item.key];
+      if (isFiniteNumber(value)) {
+        scores.push({ ...item, value });
+      }
+    }
+    return scores;
+  }, [run]);
+
+  const qaFlags = useMemo(() => {
+    if (!run) {
+      return [] as Array<{ metric: string; flag: PipelineRunThresholdFlag }>;
+    }
+    return normalizeThresholdFlags(run.qa_summary);
+  }, [run]);
+
+  const hasQaDiagnostics = qaScores.length > 0 || qaFlags.length > 0;
+
+  const stageWarnings = run?.warnings || [];
+  const hasStageWarnings = stageWarnings.length > 0;
+
+  const costSummary = run?.cost_summary || {};
+  const estimatedCostRaw = (costSummary as Record<string, unknown>).estimated_cost_cny;
+  const actualCostRaw = (costSummary as Record<string, unknown>).actual_cost_cny;
+  const estimatedDurationRaw = (costSummary as Record<string, unknown>).estimated_duration_seconds;
+  const actualDurationRaw = (costSummary as Record<string, unknown>).actual_duration_seconds;
+
+  const estimatedCost = isFiniteNumber(estimatedCostRaw) ? estimatedCostRaw : null;
+  const actualCost = isFiniteNumber(actualCostRaw) ? actualCostRaw : null;
+  const estimatedDuration = isFiniteNumber(estimatedDurationRaw) ? estimatedDurationRaw : null;
+  const actualDuration = isFiniteNumber(actualDurationRaw) ? actualDurationRaw : null;
+  const hasCostSummary =
+    estimatedCost !== null || actualCost !== null || estimatedDuration !== null || actualDuration !== null;
+
   async function handleRetry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!run) {
@@ -249,6 +324,57 @@ export default function RunDetailPage() {
               )}
             </div>
           </section>
+
+          {hasQaDiagnostics ? (
+            <section className="panel">
+              <h2>质量评分</h2>
+              {qaScores.length > 0 ? (
+                <div className="diagnostics-grid">
+                  {qaScores.map((item) => (
+                    <div className="diagnostic-card" key={item.key}>
+                      <p className="muted">{item.label}</p>
+                      <strong>{(item.value * 100).toFixed(1)} 分</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {qaFlags.length > 0 ? (
+                <ul className="warning-list">
+                  {qaFlags.map((item) => (
+                    <li key={item.metric}>
+                      <span className={item.flag.is_below_threshold ? "status-badge status-badge-danger" : "status-badge status-badge-success"}>
+                        {toMetricLabel(item.metric)}
+                      </span>
+                      <span>{item.flag.reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ) : null}
+
+          {hasStageWarnings ? (
+            <section className="panel">
+              <h2>阶段告警</h2>
+              <ul className="warning-list">
+                {stageWarnings.map((warning, index) => (
+                  <li key={`${warning}-${index}`}>{warning}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {hasCostSummary ? (
+            <section className="panel">
+              <h2>成本摘要</h2>
+              <div className="meta-grid">
+                <p>预估成本：{formatCurrency(estimatedCost)}</p>
+                <p>实际成本：{formatCurrency(actualCost)}</p>
+                <p>预估时长：{formatDuration(estimatedDuration)}</p>
+                <p>实际时长：{formatDuration(actualDuration)}</p>
+              </div>
+            </section>
+          ) : null}
 
           <section className="panel">
             <h2>最终产物</h2>

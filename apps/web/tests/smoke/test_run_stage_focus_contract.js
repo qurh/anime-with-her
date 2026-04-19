@@ -18,4 +18,14 @@ if (!detail.includes("阶段摘要")) {
   process.exit(1);
 }
 
+if (!detail.includes("阶段告警")) {
+  console.error("Run detail page should include 阶段告警 section.");
+  process.exit(1);
+}
+
+if (!detail.includes("质量评分")) {
+  console.error("Run detail page should include 质量评分 section.");
+  process.exit(1);
+}
+
 console.log("web run stage focus contract ok");

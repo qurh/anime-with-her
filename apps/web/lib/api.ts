@@ -2,6 +2,18 @@ export const API_BASE_URL = process.env.BACKEND_BASE_URL || "http://127.0.0.1:80
 
 export type PipelineRunState = "pending" | "running" | "success" | "failed";
 
+export type PipelineRunThresholdFlag = {
+  is_below_threshold: boolean;
+  reason: string;
+};
+
+export type PipelineRunQASummary = {
+  timing_fit_score?: number;
+  voice_stability_score?: number;
+  mix_balance_score?: number;
+  threshold_flags?: Record<string, PipelineRunThresholdFlag>;
+} & Record<string, unknown>;
+
 export type PipelineRunSummary = {
   run_id: string;
   episode_id: string;
@@ -21,6 +33,8 @@ export type PipelineRunDetail = PipelineRunSummary & {
   estimated_cost_cny: number;
   estimated_duration_seconds: number;
   cost_summary: Record<string, number>;
+  qa_summary: PipelineRunQASummary;
+  warnings: string[];
 };
 
 export type TriggerPipelineRunRequest = {

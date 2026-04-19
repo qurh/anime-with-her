@@ -59,6 +59,18 @@ if (!runDetailPage.includes("失败原因")) {
   console.error("Run detail page should include Chinese label: 失败原因.");
   process.exit(1);
 }
+if (!runDetailPage.includes("质量评分")) {
+  console.error("Run detail page should include diagnostics section: 质量评分.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("阶段告警")) {
+  console.error("Run detail page should include diagnostics section: 阶段告警.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("成本摘要")) {
+  console.error("Run detail page should include diagnostics section: 成本摘要.");
+  process.exit(1);
+}
 if (!runDetailPage.includes("返回任务历史")) {
   console.error("Run detail page should include action: 返回任务历史.");
   process.exit(1);
