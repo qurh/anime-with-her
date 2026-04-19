@@ -13,6 +13,8 @@ def test_speaker_role_builds_expected_contract_and_artifacts(tmp_path: Path):
 
     assert result["stage_name"] == "speaker_role"
     assert result["state"] == "success"
+    assert result["execution_mode"] == "fake"
+    assert result["warnings"] == []
     assert result["input_refs"] == ["data/episodes/episode_1/analysis/asr_align/segments.json"]
     assert result["output_refs"][0].endswith("/episodes/episode_1/analysis/speaker_role/speaker_segments.json")
     assert result["output_refs"][1].endswith("/episodes/episode_1/analysis/speaker_role/speakers.json")
