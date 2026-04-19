@@ -20,6 +20,40 @@ STAGES = [
     "mix_master",
 ]
 
+_REQUIRED_QA_SCORE_KEYS = (
+    "timing_fit_score",
+    "voice_stability_score",
+    "mix_balance_score",
+)
+
+
+def _validate_qa_summary_contract(qa_summary: object) -> dict[str, object]:
+    if not isinstance(qa_summary, dict):
+        raise RuntimeError("invalid qa_summary: expected dict")
+
+    for metric_name in _REQUIRED_QA_SCORE_KEYS:
+        score = qa_summary.get(metric_name)
+        if not isinstance(score, (int, float)):
+            raise RuntimeError(f"invalid qa_summary: missing numeric {metric_name}")
+        if score < 0.0 or score > 1.0:
+            raise RuntimeError(f"invalid qa_summary: {metric_name} out of range [0,1]")
+
+    threshold_flags = qa_summary.get("threshold_flags")
+    if not isinstance(threshold_flags, dict):
+        raise RuntimeError("invalid qa_summary: missing threshold_flags dict")
+
+    for metric_name in _REQUIRED_QA_SCORE_KEYS:
+        detail = threshold_flags.get(metric_name)
+        if not isinstance(detail, dict):
+            raise RuntimeError(f"invalid qa_summary.threshold_flags: missing {metric_name}")
+        if not isinstance(detail.get("is_below_threshold"), bool):
+            raise RuntimeError(f"invalid qa_summary.threshold_flags[{metric_name}]: bad is_below_threshold")
+        reason = detail.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise RuntimeError(f"invalid qa_summary.threshold_flags[{metric_name}]: bad reason")
+
+    return dict(qa_summary)
+
 
 def _build_dub_segments(asr_segments: list[dict[str, object]]) -> list[dict[str, object]]:
     dub_segments: list[dict[str, object]] = []
@@ -210,13 +244,14 @@ def run_episode_pipeline(
         )
         stage_results[current_stage] = mix_master
 
+        current_stage = "qa_review"
         qa_review = run_qa_review(
             episode_id=episode_id,
             final_audio_path=str(mix_master["artifacts"]["final_audio_path"]),
             final_video_path=str(mix_master["artifacts"]["final_video_path"]),
         )
-        stage_results["qa_review"] = qa_review
-        qa_summary = dict(qa_review["artifacts"].get("qa_summary", {}))
+        qa_summary = _validate_qa_summary_contract(qa_review["artifacts"]["qa_summary"])
+        stage_results[current_stage] = qa_review
 
         return {
             "episode_id": episode_id,
