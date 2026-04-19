@@ -1,7 +1,11 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Protocol
 
 from worker.config import load_worker_config
+
+_DEFAULT_TTS_TIMEOUT_MS = 3000
+_DEFAULT_TTS_MAX_RETRIES = 0
 
 
 class ProviderError(RuntimeError):
@@ -22,6 +26,17 @@ class _TemplateTtsClient:
     def synthesize(self, text: str, duration_ms: int, style_hint: str) -> str:
         _ = duration_ms
         return f"{self.provider_name}:{style_hint}:{text}"
+
+
+def _read_int_env(name: str, default: int, min_value: int) -> int:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return value if value >= min_value else default
 
 
 def _invoke_live_tts(
@@ -45,13 +60,36 @@ class _LiveTtsClient:
         api_key = os.getenv(self.api_key_env, "").strip()
         if not api_key:
             raise ProviderError(f"missing credential: {self.api_key_env}")
-        return _invoke_live_tts(
-            provider_name=self.provider_name,
-            api_key=api_key,
-            text=text,
-            duration_ms=duration_ms,
-            style_hint=style_hint,
-        )
+
+        timeout_ms = _read_int_env("TTS_TIMEOUT_MS", _DEFAULT_TTS_TIMEOUT_MS, min_value=1)
+        max_retries = _read_int_env("TTS_MAX_RETRIES", _DEFAULT_TTS_MAX_RETRIES, min_value=0)
+        total_attempts = max_retries + 1
+
+        for attempt in range(total_attempts):
+            try:
+                executor = ThreadPoolExecutor(max_workers=1)
+                future = executor.submit(
+                    _invoke_live_tts,
+                    provider_name=self.provider_name,
+                    api_key=api_key,
+                    text=text,
+                    duration_ms=duration_ms,
+                    style_hint=style_hint,
+                )
+                try:
+                    return future.result(timeout=timeout_ms / 1000)
+                finally:
+                    executor.shutdown(wait=False, cancel_futures=True)
+            except FuturesTimeoutError as error:
+                if attempt >= max_retries:
+                    raise ProviderError(
+                        f"live tts timed out after {total_attempts} attempt(s): {error}"
+                    ) from error
+            except Exception as error:
+                # non-timeout provider errors keep original behavior (single-attempt failover).
+                raise ProviderError(f"live tts invocation failed: {error}") from error
+
+        raise ProviderError(f"live tts timed out after {total_attempts} attempt(s)")
 
 
 class TtsProviderRouter:

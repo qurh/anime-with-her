@@ -20,7 +20,8 @@ def run_tts_synthesis(
         segment_id = str(segment["segment_id"])
         dub_text = str(segment["dub_text"])
         duration_target_ms = int(segment["duration_target_ms"])
-        style_hint = str(segment.get("style_hint", ""))
+        style_hint_value = segment.get("style_hint", "")
+        style_hint = "" if style_hint_value is None else str(style_hint_value)
 
         tts_result = router.synthesize(
             text=dub_text,

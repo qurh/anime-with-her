@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[2] / "apps" / "worker"))
+
 from worker.adapters import tts_provider as tts_provider_module
 
 
