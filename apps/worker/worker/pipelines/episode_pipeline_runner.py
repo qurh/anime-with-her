@@ -216,13 +216,14 @@ def run_episode_pipeline(
             final_video_path=str(mix_master["artifacts"]["final_video_path"]),
         )
         stage_results["qa_review"] = qa_review
+        qa_summary = dict(qa_review["artifacts"].get("qa_summary", {}))
 
         return {
             "episode_id": episode_id,
             "state": "success",
             "stages": STAGES,
             "stage_results": stage_results,
-            "qa_summary": qa_review["artifacts"]["qa_summary"],
+            "qa_summary": qa_summary,
             "outputs": {
                 "final_audio_path": mix_master["artifacts"]["final_audio_path"],
                 "final_video_path": mix_master["artifacts"]["final_video_path"],

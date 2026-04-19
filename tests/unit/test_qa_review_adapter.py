@@ -14,3 +14,5 @@ def test_qa_review_returns_summary_scores():
     assert 0.0 <= summary["timing_fit_score"] <= 1.0
     assert 0.0 <= summary["voice_stability_score"] <= 1.0
     assert 0.0 <= summary["mix_balance_score"] <= 1.0
+    assert "threshold_flags" in summary
+    assert isinstance(summary["threshold_flags"], dict)
