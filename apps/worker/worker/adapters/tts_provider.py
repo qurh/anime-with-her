@@ -1,5 +1,4 @@
 import os
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Protocol
 
 from worker.config import load_worker_config
@@ -45,8 +44,9 @@ def _invoke_live_tts(
     text: str,
     duration_ms: int,
     style_hint: str,
+    timeout_ms: int,
 ) -> str:
-    _ = (provider_name, api_key, duration_ms, style_hint)
+    _ = (provider_name, api_key, duration_ms, style_hint, timeout_ms)
     # real provider call should be implemented in next iteration.
     return f"live:{text}"
 
@@ -67,20 +67,15 @@ class _LiveTtsClient:
 
         for attempt in range(total_attempts):
             try:
-                executor = ThreadPoolExecutor(max_workers=1)
-                future = executor.submit(
-                    _invoke_live_tts,
+                return _invoke_live_tts(
                     provider_name=self.provider_name,
                     api_key=api_key,
                     text=text,
                     duration_ms=duration_ms,
                     style_hint=style_hint,
+                    timeout_ms=timeout_ms,
                 )
-                try:
-                    return future.result(timeout=timeout_ms / 1000)
-                finally:
-                    executor.shutdown(wait=False, cancel_futures=True)
-            except FuturesTimeoutError as error:
+            except TimeoutError as error:
                 if attempt >= max_retries:
                     raise ProviderError(
                         f"live tts timed out after {total_attempts} attempt(s): {error}"

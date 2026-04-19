@@ -26,7 +26,7 @@ def test_tts_live_contract_uses_live_primary_when_credentials_present(monkeypatc
     monkeypatch.setattr(
         tts_provider_module,
         "_invoke_live_tts",
-        lambda provider_name, api_key, text, duration_ms, style_hint: "live-primary-audio",
+        lambda provider_name, api_key, text, duration_ms, style_hint, timeout_ms: "live-primary-audio",
     )
 
     router = tts_provider_module.build_default_tts_router()
@@ -41,8 +41,8 @@ def test_tts_live_contract_falls_back_when_primary_live_fails(monkeypatch):
     monkeypatch.setenv("ALIYUN_TTS_API_KEY", "aliyun-key")
     monkeypatch.delenv("DOUBAO_TTS_API_KEY", raising=False)
 
-    def _fake_invoke(provider_name, api_key, text, duration_ms, style_hint):
-        _ = (api_key, text, duration_ms, style_hint)
+    def _fake_invoke(provider_name, api_key, text, duration_ms, style_hint, timeout_ms):
+        _ = (api_key, text, duration_ms, style_hint, timeout_ms)
         if provider_name == "aliyun_tts":
             raise RuntimeError("primary timeout")
         return "live-fallback-audio"
