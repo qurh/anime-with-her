@@ -15,6 +15,8 @@ def test_asr_align_builds_expected_contract_and_artifacts(tmp_path: Path):
     assert result["state"] == "success"
     assert result["input_refs"] == ["data/episodes/episode_1/analysis/separation/vocals.wav"]
     assert result["output_refs"][0].endswith("/episodes/episode_1/analysis/asr_align/segments.json")
+    assert result["execution_mode"] == "fake"
+    assert result["warnings"] == []
     assert result["artifacts"]["segments_path"].endswith("/episodes/episode_1/analysis/asr_align/segments.json")
     assert result["artifacts"]["segments"][0]["segment_id"] == "seg_1"
     assert result["artifacts"]["segments"][0]["source_text"]
