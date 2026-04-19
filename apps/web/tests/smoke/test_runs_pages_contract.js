@@ -71,6 +71,38 @@ if (!runDetailPage.includes("成本摘要")) {
   console.error("Run detail page should include diagnostics section: 成本摘要.");
   process.exit(1);
 }
+if (!runDetailPage.includes("const hasQaDiagnostics")) {
+  console.error("Run detail page should define hasQaDiagnostics for conditional diagnostics rendering.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("const hasStageWarnings")) {
+  console.error("Run detail page should define hasStageWarnings for conditional diagnostics rendering.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("const hasCostSummary")) {
+  console.error("Run detail page should define hasCostSummary for conditional diagnostics rendering.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("{hasQaDiagnostics ? (")) {
+  console.error("Run detail page should gate 质量评分 section behind hasQaDiagnostics.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("{hasStageWarnings ? (")) {
+  console.error("Run detail page should gate 阶段告警 section behind hasStageWarnings.");
+  process.exit(1);
+}
+if (!runDetailPage.includes("{hasCostSummary ? (")) {
+  console.error("Run detail page should gate 成本摘要 section behind hasCostSummary.");
+  process.exit(1);
+}
+if (!runDetailPage.includes('typeof flag.is_below_threshold === "boolean"')) {
+  console.error("Run detail page should guard threshold flag shape: is_below_threshold boolean.");
+  process.exit(1);
+}
+if (!runDetailPage.includes('typeof flag.reason === "string"')) {
+  console.error("Run detail page should guard threshold flag shape: reason string.");
+  process.exit(1);
+}
 if (!runDetailPage.includes("返回任务历史")) {
   console.error("Run detail page should include action: 返回任务历史.");
   process.exit(1);

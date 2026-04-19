@@ -6,7 +6,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import type {
   PipelineRunDetail as ApiPipelineRunDetail,
-  PipelineRunQASummary,
   PipelineRunThresholdFlag,
 } from "../../../lib/api";
 
@@ -43,6 +42,21 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function toObjectRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function isValidThresholdFlag(value: unknown): value is PipelineRunThresholdFlag {
+  const flag = toObjectRecord(value);
+  if (!flag) {
+    return false;
+  }
+  return typeof flag.is_below_threshold === "boolean" && typeof flag.reason === "string";
+}
+
 function toMetricLabel(metric: string): string {
   const labels: Record<string, string> = {
     timing_fit_score: "时序贴合",
@@ -66,12 +80,22 @@ function formatDuration(value: number | null): string {
   return `${Math.round(value)}s`;
 }
 
-function normalizeThresholdFlags(summary: PipelineRunQASummary): Array<{ metric: string; flag: PipelineRunThresholdFlag }> {
-  const rawFlags = summary.threshold_flags;
+function normalizeThresholdFlags(summary: unknown): Array<{ metric: string; flag: PipelineRunThresholdFlag }> {
+  const summaryRecord = toObjectRecord(summary);
+  if (!summaryRecord) {
+    return [];
+  }
+  const rawFlags = toObjectRecord(summaryRecord.threshold_flags);
   if (!rawFlags) {
     return [];
   }
-  return Object.entries(rawFlags).map(([metric, flag]) => ({ metric, flag }));
+  const flags: Array<{ metric: string; flag: PipelineRunThresholdFlag }> = [];
+  for (const [metric, flag] of Object.entries(rawFlags)) {
+    if (isValidThresholdFlag(flag)) {
+      flags.push({ metric, flag });
+    }
+  }
+  return flags;
 }
 
 function toStateLabel(state: string): string {
@@ -187,9 +211,13 @@ export default function RunDetailPage() {
     if (!run) {
       return [] as Array<{ key: string; label: string; value: number }>;
     }
+    const qaSummary = toObjectRecord(run.qa_summary);
+    if (!qaSummary) {
+      return [] as Array<{ key: string; label: string; value: number }>;
+    }
     const scores: Array<{ key: string; label: string; value: number }> = [];
     for (const item of QA_SCORE_ITEMS) {
-      const value = run.qa_summary[item.key];
+      const value = qaSummary[item.key];
       if (isFiniteNumber(value)) {
         scores.push({ ...item, value });
       }
@@ -206,7 +234,9 @@ export default function RunDetailPage() {
 
   const hasQaDiagnostics = qaScores.length > 0 || qaFlags.length > 0;
 
-  const stageWarnings = run?.warnings || [];
+  const stageWarnings = Array.isArray(run?.warnings)
+    ? run.warnings.filter((warning): warning is string => typeof warning === "string" && warning.length > 0)
+    : [];
   const hasStageWarnings = stageWarnings.length > 0;
 
   const costSummary = run?.cost_summary || {};
