@@ -19,6 +19,8 @@ class PipelineRun(BaseModel):
     state: PipelineRunState = PipelineRunState.PENDING
     stage_states: dict[str, str] = Field(default_factory=dict)
     outputs: dict[str, str] = Field(default_factory=dict)
+    qa_summary: dict[str, object] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
     estimated_cost_cny: float = 0.0
     estimated_duration_seconds: int = 0
     cost_summary: dict[str, float | int] = Field(default_factory=dict)

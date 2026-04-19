@@ -32,6 +32,60 @@ def _load_episode_runner():
     return getattr(module, "run_episode_pipeline")
 
 
+def _extract_warning_messages(raw_warnings: object) -> list[str]:
+    if isinstance(raw_warnings, str):
+        return [raw_warnings]
+    if not isinstance(raw_warnings, list):
+        return []
+
+    messages: list[str] = []
+    for item in raw_warnings:
+        if isinstance(item, str):
+            warning_message = item
+        else:
+            warning_message = str(item)
+
+        if warning_message:
+            messages.append(warning_message)
+    return messages
+
+
+def _collect_run_warnings(result: dict[str, object]) -> list[str]:
+    warnings: list[str] = []
+    seen: set[str] = set()
+
+    def _append(values: list[str]):
+        for value in values:
+            if value in seen:
+                continue
+            seen.add(value)
+            warnings.append(value)
+
+    _append(_extract_warning_messages(result.get("warnings")))
+
+    stage_results = result.get("stage_results")
+    if not isinstance(stage_results, dict):
+        return warnings
+
+    ordered_stage_names: list[str] = []
+    stages = result.get("stages")
+    if isinstance(stages, list):
+        for stage_name in stages:
+            if isinstance(stage_name, str) and stage_name in stage_results:
+                ordered_stage_names.append(stage_name)
+
+    for stage_name in sorted(str(key) for key in stage_results if str(key) not in ordered_stage_names):
+        ordered_stage_names.append(stage_name)
+
+    for stage_name in ordered_stage_names:
+        stage_result = stage_results.get(stage_name)
+        if not isinstance(stage_result, dict):
+            continue
+        _append(_extract_warning_messages(stage_result.get("warnings")))
+
+    return warnings
+
+
 def _execute_pipeline(
     run_id: str,
     episode_id: str,
@@ -62,6 +116,10 @@ def _execute_pipeline(
             stage_state = str(stage_result.get("state", "unknown"))
             pipeline_run_store.set_stage_state(run_id, stage_name, stage_state)
 
+        qa_summary = result.get("qa_summary")
+        normalized_qa_summary = qa_summary if isinstance(qa_summary, dict) else {}
+        warnings = _collect_run_warnings(result)
+
         actual_duration_seconds = max(0, int(round(time.monotonic() - started_at)))
         if str(result.get("state", "failed")) == "failed":
             pipeline_run_store.update_run_state(
@@ -75,6 +133,8 @@ def _execute_pipeline(
                     "actual_cost_cny": 0.0,
                     "actual_duration_seconds": actual_duration_seconds,
                 },
+                qa_summary=normalized_qa_summary,
+                warnings=warnings,
             )
             return
 
@@ -91,6 +151,8 @@ def _execute_pipeline(
                 "actual_cost_cny": estimated_cost_cny,
                 "actual_duration_seconds": actual_duration_seconds,
             },
+            qa_summary=normalized_qa_summary,
+            warnings=warnings,
         )
     except Exception as error:
         actual_duration_seconds = max(0, int(round(time.monotonic() - started_at)))
@@ -104,6 +166,7 @@ def _execute_pipeline(
                 "actual_cost_cny": 0.0,
                 "actual_duration_seconds": actual_duration_seconds,
             },
+            warnings=[str(error)] if str(error) else [],
         )
 
 
@@ -120,6 +183,8 @@ def _serialize_run(run: PipelineRun) -> dict[str, object]:
         "estimated_cost_cny": run.estimated_cost_cny,
         "estimated_duration_seconds": run.estimated_duration_seconds,
         "cost_summary": run.cost_summary,
+        "qa_summary": run.qa_summary,
+        "warnings": run.warnings,
         "final_audio_path": run.outputs.get("final_audio_path", ""),
         "final_video_path": run.outputs.get("final_video_path", ""),
         "created_at": run.created_at.isoformat(),

@@ -30,6 +30,12 @@ def test_pipeline_run_status_endpoint_returns_stage_states_and_outputs(client, t
     assert status_payload is not None
     assert status_payload["state"] == "success"
     assert status_payload["stage_states"]["mix_master"] == "success"
+    assert isinstance(status_payload["qa_summary"], dict)
+    assert "timing_fit_score" in status_payload["qa_summary"]
+    assert "voice_stability_score" in status_payload["qa_summary"]
+    assert "mix_balance_score" in status_payload["qa_summary"]
+    assert isinstance(status_payload["warnings"], list)
+    assert all(isinstance(item, str) for item in status_payload["warnings"])
     assert Path(status_payload["final_audio_path"]).exists()
     assert Path(status_payload["final_video_path"]).exists()
 

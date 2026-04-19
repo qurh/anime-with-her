@@ -41,6 +41,8 @@ class PipelineRunStore:
         error_message: str | None = None,
         outputs: dict[str, str] | None = None,
         cost_summary: dict[str, float | int] | None = None,
+        qa_summary: dict[str, object] | None = None,
+        warnings: list[str] | None = None,
     ) -> PipelineRun:
         run = self.runs[run_id]
         run.state = state
@@ -53,6 +55,10 @@ class PipelineRunStore:
             run.outputs = outputs
         if cost_summary is not None:
             run.cost_summary = cost_summary
+        if qa_summary is not None:
+            run.qa_summary = qa_summary
+        if warnings is not None:
+            run.warnings = warnings
         return run
 
     def set_stage_state(self, run_id: str, stage_name: str, stage_state: str) -> PipelineRun:

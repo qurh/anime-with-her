@@ -43,3 +43,5 @@ def test_pipeline_run_status_returns_cost_summary(client, tmp_path):
     assert status_payload is not None
     assert status_payload["cost_summary"]["estimated_cost_cny"] > 0
     assert status_payload["cost_summary"]["actual_cost_cny"] >= 0
+    assert isinstance(status_payload["qa_summary"], dict)
+    assert isinstance(status_payload["warnings"], list)
