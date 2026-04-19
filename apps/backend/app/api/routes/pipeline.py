@@ -34,6 +34,8 @@ def _load_episode_runner():
 
 def _extract_warning_messages(raw_warnings: object) -> list[str]:
     if isinstance(raw_warnings, str):
+        if raw_warnings == "":
+            return []
         return [raw_warnings]
     if not isinstance(raw_warnings, list):
         return []

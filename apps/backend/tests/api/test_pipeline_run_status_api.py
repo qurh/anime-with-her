@@ -66,3 +66,106 @@ def test_episode_pipeline_runs_list_returns_latest_first(client, tmp_path):
     assert list_response.status_code == 200
     runs = list_response.json()["data"]
     assert [item["run_id"] for item in runs[:2]] == [run_id_2, run_id_1]
+
+
+def test_pipeline_run_status_persists_exact_warning_content(client, tmp_path, monkeypatch):
+    final_audio = tmp_path / "final.wav"
+    final_video = tmp_path / "final.mp4"
+    final_audio.write_text("audio", encoding="utf-8")
+    final_video.write_text("video", encoding="utf-8")
+
+    def fake_runner(*, episode_id: str, source_video: str, root: str, start_stage: str | None = None):
+        _ = (episode_id, source_video, root, start_stage)
+        return {
+            "state": "success",
+            "stages": ["media_ingest", "asr_align", "mix_master"],
+            "stage_results": {
+                "media_ingest": {
+                    "state": "success",
+                    "warnings": ["stage warning ingest"],
+                },
+                "asr_align": {
+                    "state": "success",
+                    "warnings": ["stage warning align"],
+                },
+                "mix_master": {
+                    "state": "success",
+                    "warnings": [],
+                },
+            },
+            "warnings": ["top-level warning", "stage warning align"],
+            "qa_summary": {
+                "timing_fit_score": 0.9,
+                "voice_stability_score": 0.91,
+                "mix_balance_score": 0.92,
+            },
+            "outputs": {
+                "final_audio_path": str(final_audio),
+                "final_video_path": str(final_video),
+            },
+        }
+
+    monkeypatch.setattr("app.api.routes.pipeline._load_episode_runner", lambda: fake_runner)
+
+    trigger_response = client.post(
+        "/api/v1/episodes/episode_warning_success/pipeline/run",
+        json={
+            "source_video": "data/input/demo.mkv",
+            "root": str(tmp_path / "episodes"),
+        },
+    )
+    assert trigger_response.status_code == 202
+    run_id = trigger_response.json()["data"]["run_id"]
+
+    status_payload = _wait_for_terminal_state(client, run_id)
+    assert status_payload is not None
+    assert status_payload["state"] == "success"
+    assert status_payload["warnings"] == [
+        "top-level warning",
+        "stage warning align",
+        "stage warning ingest",
+    ]
+
+
+def test_pipeline_run_status_failed_includes_meaningful_warnings(client, tmp_path, monkeypatch):
+    def fake_runner(*, episode_id: str, source_video: str, root: str, start_stage: str | None = None):
+        _ = (episode_id, source_video, root, start_stage)
+        return {
+            "state": "failed",
+            "failed_stage": "asr_align",
+            "error": "forced failure",
+            "stages": ["media_ingest", "asr_align"],
+            "stage_results": {
+                "media_ingest": {
+                    "state": "success",
+                    "warnings": ["ingest warning"],
+                },
+                "asr_align": {
+                    "state": "failed",
+                    "warnings": ["align warning"],
+                },
+            },
+            "warnings": "",
+            "qa_summary": {},
+            "outputs": {
+                "final_audio_path": "",
+                "final_video_path": "",
+            },
+        }
+
+    monkeypatch.setattr("app.api.routes.pipeline._load_episode_runner", lambda: fake_runner)
+
+    trigger_response = client.post(
+        "/api/v1/episodes/episode_warning_failed/pipeline/run",
+        json={
+            "source_video": "data/input/demo.mkv",
+            "root": str(tmp_path / "episodes"),
+        },
+    )
+    assert trigger_response.status_code == 202
+    run_id = trigger_response.json()["data"]["run_id"]
+
+    status_payload = _wait_for_terminal_state(client, run_id)
+    assert status_payload is not None
+    assert status_payload["state"] == "failed"
+    assert status_payload["warnings"] == ["ingest warning", "align warning"]
