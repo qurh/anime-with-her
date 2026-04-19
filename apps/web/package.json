@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "node tests/smoke/test_existing_pages_contract.js",
-    "test:e2e": "node tests/smoke/test_existing_pages_contract.js && node tests/smoke/test_runs_pages_contract.js && node tests/smoke/test_run_retry_contract.js && node tests/smoke/test_ui_tokens_contract.js && node tests/smoke/test_accessibility_contract.js && node tests/smoke/test_responsive_motion_contract.js && node tests/smoke/test_api_error_copy_contract.js && node tests/smoke/test_copy_encoding_contract.js && node tests/smoke/test_runs_filter_contract.js && node tests/smoke/test_run_stage_focus_contract.js && node tests/smoke/test_home_feedback_contract.js && node tests/smoke/test_a11y_landmark_contract.js && node tests/smoke/test_interaction_motion_contract.js && node tests/smoke/test_skeleton_contract.js"
+    "test:e2e": "node tests/smoke/test_existing_pages_contract.js && node tests/smoke/test_runs_pages_contract.js && node tests/smoke/test_run_retry_contract.js && node tests/smoke/test_ui_tokens_contract.js && node tests/smoke/test_accessibility_contract.js && node tests/smoke/test_responsive_motion_contract.js && node tests/smoke/test_api_error_copy_contract.js && node tests/smoke/test_copy_encoding_contract.js && node tests/smoke/test_runs_filter_contract.js && node tests/smoke/test_run_stage_focus_contract.js && node tests/smoke/test_home_feedback_contract.js && node tests/smoke/test_a11y_landmark_contract.js && node tests/smoke/test_interaction_motion_contract.js && node tests/smoke/test_skeleton_contract.js",
+    "test:playwright": "NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= playwright test --config=playwright.config.ts"
   },
   "dependencies": {
     "next": "15.3.3",
@@ -14,6 +15,7 @@
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "25.6.0",
     "@types/react": "19.2.14",
     "typescript": "5.8.3"
