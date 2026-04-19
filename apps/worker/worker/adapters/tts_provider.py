@@ -38,6 +38,12 @@ def _read_int_env(name: str, default: int, min_value: int) -> int:
     return value if value >= min_value else default
 
 
+def _is_timeout_like_error(error: Exception) -> bool:
+    if isinstance(error, TimeoutError):
+        return True
+    return "timeout" in type(error).__name__.lower()
+
+
 def _invoke_live_tts(
     provider_name: str,
     api_key: str,
@@ -75,12 +81,13 @@ class _LiveTtsClient:
                     style_hint=style_hint,
                     timeout_ms=timeout_ms,
                 )
-            except TimeoutError as error:
-                if attempt >= max_retries:
-                    raise ProviderError(
-                        f"live tts timed out after {total_attempts} attempt(s): {error}"
-                    ) from error
             except Exception as error:
+                if _is_timeout_like_error(error):
+                    if attempt >= max_retries:
+                        raise ProviderError(
+                            f"live tts timed out after {total_attempts} attempt(s): {error}"
+                        ) from error
+                    continue
                 # non-timeout provider errors keep original behavior (single-attempt failover).
                 raise ProviderError(f"live tts invocation failed: {error}") from error
 
